@@ -54,7 +54,7 @@ df_haz = df_haz_raw[[
     "endtime": "End Date"
     })
 
-# %%
+# %% Create spatial dataframe
 
 point1 = [Point(xy) for xy in zip(df_haz_raw.minlon, df_haz_raw.minlat)]
 point2 = [Point(xy) for xy in zip(df_haz_raw.minlon, df_haz_raw.maxlat)]
@@ -63,10 +63,13 @@ point4 = [Point(xy) for xy in zip(df_haz_raw.maxlon, df_haz_raw.minlat)]
 
 poly = [Polygon(x) for x in zip(point1, point2, point3, point4)]
 
-
-# %%
 gdf_haz = gpd.GeoDataFrame(
     df_haz, geometry=poly, crs="EPSG:4326"
 ).drop(["minlat", "minlon", "maxlat", "maxlon"], axis = 1)
+
+# %% Add buffer
+buffer = 0.1
+gdf_haz.geometry = gdf_haz.geometry.buffer(0.2)
+
 
 # %%
