@@ -3,13 +3,17 @@ import pandas as pd
 import geopandas as gpd
 from shapely.geometry import Point, Polygon
 import rasterio
-import matplotlib 
+import rasterio.plot
+import matplotlib.pyplot 
 import numpy as np
+import xarray as xr
+import rioxarray
 
 #%% Constants
 EM_DAT_PATH = "C:/Users/wja209/OneDrive - Vrije Universiteit Amsterdam/Research/Paper 1 - Ruoying/Data/EM-DAT/emdat_public_2023_03_31_query_uid-n7b9hv-natural-sisasters.csv"
 HAZ_PATH = "C:/Users/wja209/OneDrive - Vrije Universiteit Amsterdam/Research/Paper 1 - Ruoying/Data/MYRIAD-HESA example data/MYRIAD-HES_simple.csv"
-EXP_PATH = "C:/Users/wja209/Downloads/GHS_POP_E2030_GLOBE_R2023A_4326_30ss_V1_0_R4_C19/GHS_POP_E2030_GLOBE_R2023A_4326_30ss_V1_0_R4_C19.tif"
+EXP_PATH = "C:/Users/wja209/OneDrive - Vrije Universiteit Amsterdam/Research/Paper 1 - Ruoying/Data/GHS_POP_E2030_GLOBE_R2023A_4326_30ss_V1_0_R4_C19/GHS_POP_E2030_GLOBE_R2023A_4326_30ss_V1_0_R4_C19.tif"
+VUL_PATH = "C:/Users/wja209/OneDrive - Vrije Universiteit Amsterdam/Research/Paper 1 - Ruoying/Data/doi_10.5061_dryad.dk1j0__v2/GDP_per_capita_PPP_1990_2015_v2.nc"
 
 ### IMPACT
 
@@ -19,8 +23,8 @@ df_em_dat_raw = pd.read_csv(EM_DAT_PATH, delimiter= ';')
 #%%
 df_em_dat_raw["Start Date"] = pd.to_datetime(df_em_dat_raw[['Start Year', 'Start Month', 'Start Day']].rename(columns = {'Start Year':'year', 'Start Month': 'month', 'Start Day': 'day'}))
 df_em_dat_raw["End Date"] = pd.to_datetime(df_em_dat_raw[['End Year', 'End Month', 'End Day']].rename(columns = {'End Year':'year', 'End Month': 'month', 'End Day': 'day'}))
-df_em_dat_raw.Latitude = df_em_dat_raw.Latitude.str.replace('\D', '', regex=True).astype("float")
-df_em_dat_raw.Longitude = df_em_dat_raw.Longitude.str.replace('\D', '', regex=True).astype("float")
+df_em_dat_raw.Latitude = df_em_dat_raw.Latitude.str.replace('/D', '', regex=True).astype("float")
+df_em_dat_raw.Longitude = df_em_dat_raw.Longitude.str.replace('/D', '', regex=True).astype("float")
 
 
 point = [Point(xy) for xy in zip(df_em_dat_raw.Latitude, df_em_dat_raw.Longitude)]
@@ -78,19 +82,16 @@ gdf_haz = gpd.GeoDataFrame(
 # gdf_haz.geometry = gdf_haz.geometry.buffer(0.2)
 
 ### EXPOSURE
-
 # %%
-ds = rasterio.open(EXP_PATH)
-data = ds.read()
-
-# %%
-vmin = 0
-vmax = np.quantile(ds.read(), 0.999)
+ds_exp = rioxarray.open_rasterio(EXP_PATH)
 
 #%%
-fig, ax = matplotlib.pyplot.subplots(figsize = (5,5))
-image_hidden = ax.imshow(ds.read()[0], cmap = "Spectral", vmin =vmin, vmax = vmax)
-fig.colorbar(image_hidden, ax=ax)
-image = rasterio.plot.show(ds, cmap = "Spectral" , vmin = vmin, vmax = vmax)
+ds_exp.plot(robust = True)
 
 
+### VULNERABILITY
+# %%
+ds_vul = rioxarray.open_rasterio(VUL_PATH)
+
+#%%
+ds_vul.isel(time= 0).plot(robust = True)
