@@ -2,10 +2,16 @@
 import pandas as pd
 import geopandas as gpd
 from shapely.geometry import Point, Polygon
+import rasterio
+import matplotlib 
+import numpy as np
 
 #%% Constants
 EM_DAT_PATH = "C:/Users/wja209/OneDrive - Vrije Universiteit Amsterdam/Research/Paper 1 - Ruoying/Data/EM-DAT/emdat_public_2023_03_31_query_uid-n7b9hv-natural-sisasters.csv"
 HAZ_PATH = "C:/Users/wja209/OneDrive - Vrije Universiteit Amsterdam/Research/Paper 1 - Ruoying/Data/MYRIAD-HESA example data/MYRIAD-HES_simple.csv"
+EXP_PATH = "C:/Users/wja209/Downloads/GHS_POP_E2030_GLOBE_R2023A_4326_30ss_V1_0_R4_C19/GHS_POP_E2030_GLOBE_R2023A_4326_30ss_V1_0_R4_C19.tif"
+
+### IMPACT
 
 #%% Load data
 df_em_dat_raw = pd.read_csv(EM_DAT_PATH, delimiter= ';')
@@ -33,7 +39,7 @@ gdf_em_dat = gpd.GeoDataFrame(
 ]], geometry=point, crs="EPSG:4326"
 )
 
-
+### HAZARD
 # %%
 df_haz_raw = pd.read_csv(HAZ_PATH, delimiter= ',')
 
@@ -68,8 +74,23 @@ gdf_haz = gpd.GeoDataFrame(
 ).drop(["minlat", "minlon", "maxlat", "maxlon"], axis = 1)
 
 # %% Add buffer
-buffer = 0.1
-gdf_haz.geometry = gdf_haz.geometry.buffer(0.2)
+# buffer = 0.1
+# gdf_haz.geometry = gdf_haz.geometry.buffer(0.2)
 
+### EXPOSURE
 
 # %%
+ds = rasterio.open(EXP_PATH)
+data = ds.read()
+
+# %%
+vmin = 0
+vmax = np.quantile(ds.read(), 0.999)
+
+#%%
+fig, ax = matplotlib.pyplot.subplots(figsize = (5,5))
+image_hidden = ax.imshow(ds.read()[0], cmap = "Spectral", vmin =vmin, vmax = vmax)
+fig.colorbar(image_hidden, ax=ax)
+image = rasterio.plot.show(ds, cmap = "Spectral" , vmin = vmin, vmax = vmax)
+
+
