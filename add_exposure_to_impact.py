@@ -40,3 +40,5 @@ for year in impact_years:
 
 # %% Save merged file
 gdf_impact.to_file(PROCESSED_IMPACT_EXP_AND_VUL_PATH)
+
+# %%
