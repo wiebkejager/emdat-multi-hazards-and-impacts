@@ -1,7 +1,6 @@
 # %% Imports
 import geopandas as gpd
 import rasterstats
-import rioxarray
 import rasterio as rio
 
 # %%
