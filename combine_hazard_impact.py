@@ -2,15 +2,7 @@
 import pandas as pd
 import geopandas as gpd
 from shapely import wkt
-from shapely.geometry import Point, Polygon
-import rasterio
-import rasterio.plot
-from rasterio import features
-import matplotlib.pyplot as plt
-import numpy as np
-import xarray as xr
-import rioxarray
-from funs import has_overlap_in_time
+import time
 
 # %% Constants
 PROCESSED_IMPACT_PATH = (
@@ -18,8 +10,10 @@ PROCESSED_IMPACT_PATH = (
 )
 
 # %% Load data
+start = time.time()
 gdf_impact = gpd.read_file(PROCESSED_IMPACT_PATH)
-
+end = time.time()
+print((end - start) / 60)
 
 # %% Use Subtype to map Hazard 1
 disaster_subtype_to_hazard_map = {
@@ -65,7 +59,7 @@ gdf_impact = gdf_impact[~gdf_impact["Hazard1"].isna()]
 
 # %% Map Associated to Hazard 2
 associated_disaster_to_hazard_map = {
-    "gdf_impactd shortage": "exclude",
+    "Food shortage": "exclude",
     "Fire": "exclude",
     "Slide (land, mud, snow, rock)": "ls",
     "Flood": "fl",
@@ -183,10 +177,19 @@ spatial_filter = gpd.GeoSeries(df_haz_impact["geometry_hazard"]).intersects(
 # %%
 df_haz_impact = df_haz_impact[spatial_filter]
 
-## TO DO: Dissolve the ones that have the same disaster number and make list of their magnitudes
+# %%
+gdf_haz_impact = gpd.GeoDataFrame(
+    df_haz_impact, crs=crs, geometry=df_haz_impact["geometry_hazard"]
+)
+gdf_haz2 = gdf_haz_impact.dissolve(
+    "Dis No", aggfunc={"Intensity": (lambda x: list(x))}
+).add_suffix("_eq")
 
-
-# %% TO DO:
+# %%
 gdf_impact = gdf_impact.set_index("Dis No")
-df_haz_impact = df_haz_impact.set_index("Dis No")
-gdf_impact.loc["eq intensity"] = df_haz_impact["Intensity"]
+
+# %% Merge hazards with impacts
+foo = gdf_impact.join(gdf_haz2, how="left", rsuffix="_eq")
+
+
+# %%
