@@ -1,7 +1,8 @@
 # %% Imports
 import pandas as pd
 import geopandas as gpd
-
+from my_functions import find_overlapping_hazard
+from shapely import wkt
 
 # %% Define constants
 hazards = [
@@ -21,8 +22,18 @@ START_YEAR = 2000
 END_YEAR = 2015
 HAZARD_PATH = "C:/Users/wja209/DATA/RAW/hazards/"
 PROCESSED_HAZARD_PATH = "C:/Users/wja209/DATA/PROCESSED/"
+PROCESSED_IMPACT_PATH = (
+    "C:/Users/wja209/DATA/PROCESSED/impact_exposure_vulnerability_1990_2015.gpkg"
+)
+PROCESSED_IMPACT_PATH2_CSV = (
+    "C:/Users/wja209/DATA/PROCESSED/impact_hazard_exposure_vulnerability_1990_2015.csv"
+)
+PROCESSED_IMPACT_PATH2 = (
+    "C:/Users/wja209/DATA/PROCESSED/impact_hazard_exposure_vulnerability_1990_2015.gpkg"
+)
+PROCESSED_IMPACT_PATH2_GEOM_CSV = "C:/Users/wja209/DATA/PROCESSED/impact_hazard_exposure_vulnerability_1990_2015_geometries.csv"
 
-# %% Open all single hazard files, truncate to period 1990 - 2015 and store again
+# %% Open all single raw hazard files, truncate to period 1990 - 2015 and save
 for hazard in hazards:
     print(hazard)
     df = pd.read_csv(HAZARD_PATH + hazard + ".csv", index_col=0)
@@ -30,13 +41,55 @@ for hazard in hazards:
         df["endtime"].str[0:4] <= str(END_YEAR)
     )
     df = df[time_filter]
+    # ls and wf do not have intensity, so compute affected area
+    if (hazard == "ls") | (hazard == "wf"):
+        # Convert to gdf with temporary geometry column needed to calculated areal extent
+        df["geometry"] = df["Geometry"].apply(wkt.loads)
+        df = gpd.GeoDataFrame(
+            df, crs={"init": "epsg:4326"}, geometry=df["geometry"]
+        ).to_crs(
+            {"init": "epsg:3857"}
+        )  # reproject into planar coordinate system for area calucation
+        # Compute area
+        df["Intensity"] = df["geometry"].area / 10**6
+        # Drop geometry column again so that file format is consistant with other hazard files
+        df.drop("geometry", axis=1, inplace=True)
+
     df.to_csv(HAZARD_PATH + hazard + "_1990_2015.csv", index=False)
 
 
-# %% Open all reduced single datafiles, concatenate into single df and store
-df_list = []
+# %% Load impact data
+gdf_impact_geometries = gpd.read_file(PROCESSED_IMPACT_PATH)
+gdf_impact = gdf_impact_geometries.copy()
+
+# %% Loop through hazards, find overlapping ones and save
 for hazard in hazards:
     print(hazard)
-    df_list.append(pd.read_csv(PROCESSED_HAZARD_PATH + hazard + "_1990_2015.csv"))
-df = pd.concat(df_list)
-df.to_csv(HAZARD_PATH + "hazards_1990_2015.csv", index=False)
+    gdf_overlapping_hazards = find_overlapping_hazard(
+        hazard, HAZARD_PATH, gdf_impact_geometries
+    )
+    gdf_overlapping_hazards.to_file(PROCESSED_HAZARD_PATH + hazard + ".gpkg")
+    gdf_overlapping_hazards.to_csv(PROCESSED_HAZARD_PATH + hazard + ".csv")
+
+# %% Loop through overlapping hazards and join hazards with impact
+for hazard in hazards:
+    print(hazard)
+    gdf_overlapping_hazards = (
+        gpd.read_file(PROCESSED_HAZARD_PATH + hazard + ".gpkg")
+        .set_index("Dis No")
+        .add_suffix("_" + hazard)
+    )
+    gdf_impact_geometries = gdf_impact_geometries.merge(
+        right=gdf_overlapping_hazards, on="Dis No", how="left"
+    )
+    gdf_impact = gdf_impact.merge(
+        right=gdf_overlapping_hazards.drop(columns=["geometry_" + hazard]),
+        on="Dis No",
+        how="left",
+    )
+
+# %% Save combined hazard impact with and without geometries for further analysis
+gdf_impact_geometries.to_csv(PROCESSED_IMPACT_PATH2_GEOM_CSV, index=False)
+gdf_impact.to_file(PROCESSED_IMPACT_PATH2)
+gdf_impact.drop(columns="geometry").to_csv(PROCESSED_IMPACT_PATH2_CSV, index=False)
+# %%

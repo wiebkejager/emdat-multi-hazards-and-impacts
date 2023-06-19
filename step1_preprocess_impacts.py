@@ -5,7 +5,6 @@ import geopandas as gpd
 # %% Define constants
 START_YEAR = 2000
 END_YEAR = 2015
-# VAR_MAPPING_PATH = "C:/Users/wja209/DATA/RAW/hazard-variable-mapping.csv"
 EM_DAT_PATH = "C:/Users/wja209/DATA/RAW/EM-DAT/emdat_public_2023_03_31_query_uid-n7b9hv-natural-sisasters.csv"
 GDIS_PATH = "C:/Users/wja209/DATA/RAW/pend-gdis-1960-2018-disasterlocations-gdb/pend-gdis-1960-2018-disasterlocations.gdb"
 GDIS_CSV_PATH = "C:/Users/wja209/DATA/RAW/pend-gdis-1960-2018-disasterlocations-gdb/pend-gdis-1960-2018-disasterlocations.csv"
