@@ -33,43 +33,61 @@ PROCESSED_IMPACT_PATH2 = (
 )
 PROCESSED_IMPACT_PATH2_GEOM_CSV = "C:/Users/wja209/DATA/PROCESSED/impact_hazard_exposure_vulnerability_1990_2015_geometries.csv"
 
-# %% Open all single raw hazard files, truncate to period 1990 - 2015 and save
-for hazard in hazards:
-    print(hazard)
-    df = pd.read_csv(HAZARD_PATH + hazard + ".csv", index_col=0)
-    time_filter = (df["starttime"].str[0:4] >= str(START_YEAR)) & (
-        df["endtime"].str[0:4] <= str(END_YEAR)
-    )
-    df = df[time_filter]
-    # ls and wf do not have intensity, so compute affected area
-    if (hazard == "ls") | (hazard == "wf"):
-        # Convert to gdf with temporary geometry column needed to calculated areal extent
-        df["geometry"] = df["Geometry"].apply(wkt.loads)
-        df = gpd.GeoDataFrame(
-            df, crs={"init": "epsg:4326"}, geometry=df["geometry"]
-        ).to_crs(
-            {"init": "epsg:3857"}
-        )  # reproject into planar coordinate system for area calucation
-        # Compute area
-        df["Intensity"] = df["geometry"].area / 10**6
-        # Drop geometry column again so that file format is consistant with other hazard files
-        df.drop("geometry", axis=1, inplace=True)
 
-    df.to_csv(HAZARD_PATH + hazard + "_1990_2015.csv", index=False)
+# # %% Open all single raw hazard files, truncate to period 1990 - 2015 and save
+# for hazard in hazards:
+#     print(hazard)
+#     df = pd.read_csv(HAZARD_PATH + hazard + ".csv", index_col=0)
+#     time_filter = (df["starttime"].str[0:4] >= str(START_YEAR)) & (
+#         df["endtime"].str[0:4] <= str(END_YEAR)
+#     )
+#     df = df[time_filter]
+#     # ls and wf do not have intensity, so compute affected area
+#     if (hazard == "ls") | (hazard == "wf") | (hazard == "fl"):
+#         # Convert to gdf with temporary geometry column needed to calculated areal extent
+#         df["geometry"] = df["Geometry"].apply(wkt.loads)
+#         df = gpd.GeoDataFrame(
+#             df, crs={"init": "epsg:4326"}, geometry=df["geometry"]
+#         ).to_crs(
+#             {"init": "epsg:3857"}
+#         )  # reproject into planar coordinate system for area calucation
+#         # Compute area
+#         df["Intensity"] = df["geometry"].area / 10**6
+#         # Drop geometry column again so that file format is consistant with other hazard files
+#         df.drop("geometry", axis=1, inplace=True)
+
+#     df.to_csv(HAZARD_PATH + hazard + "_1990_2015.csv", index=False)
 
 
 # %% Load impact data
 gdf_impact_geometries = gpd.read_file(PROCESSED_IMPACT_PATH)
 gdf_impact = gdf_impact_geometries.copy()
 
+
 # %% Loop through hazards, find overlapping ones and save
 for hazard in hazards:
     print(hazard)
-    gdf_overlapping_hazards = find_overlapping_hazard(
-        hazard, HAZARD_PATH, gdf_impact_geometries
+    # Load hazard file
+    df_hazard = pd.read_csv(HAZARD_PATH + hazard + "_1990_2015.csv")
+
+    # Convert to GeoDataFrame
+    df_hazard["geometry"] = df_hazard["Geometry"].apply(wkt.loads)
+    gdf_hazard = gpd.GeoDataFrame(
+        df_hazard, crs=gdf_impact.crs, geometry=df_hazard["geometry"]
     )
+    gdf_hazard.drop("Geometry", axis=1, inplace=True)
+    gdf_hazard["starttime"] = pd.to_datetime(gdf_hazard["starttime"], utc=True)
+    gdf_hazard["endtime"] = pd.to_datetime(gdf_hazard["endtime"], utc=True)
+
+    # Identify overlapping hazards
+    gdf_overlapping_hazards = find_overlapping_hazard(
+        hazard, gdf_hazard, gdf_impact_geometries
+    )
+
+    # Save
     gdf_overlapping_hazards.to_file(PROCESSED_HAZARD_PATH + hazard + ".gpkg")
     gdf_overlapping_hazards.to_csv(PROCESSED_HAZARD_PATH + hazard + ".csv")
+
 
 # %% Loop through overlapping hazards and join hazards with impact
 for hazard in hazards:
@@ -88,8 +106,10 @@ for hazard in hazards:
         how="left",
     )
 
+
 # %% Save combined hazard impact with and without geometries for further analysis
 gdf_impact_geometries.to_csv(PROCESSED_IMPACT_PATH2_GEOM_CSV, index=False)
 gdf_impact.to_file(PROCESSED_IMPACT_PATH2)
 gdf_impact.drop(columns="geometry").to_csv(PROCESSED_IMPACT_PATH2_CSV, index=False)
+
 # %%
