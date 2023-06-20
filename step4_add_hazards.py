@@ -15,7 +15,6 @@ hazards = [
     "hw",
     "ew",
     "cw",
-    "wf",
 ]  # available hazards
 
 START_YEAR = 2000

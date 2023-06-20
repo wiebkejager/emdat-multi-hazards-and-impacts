@@ -22,7 +22,6 @@ disaster_type_to_hazard_map = {
     "Earthquake": "eq",
     "Landslide": "ls",
     "Volcanic activity": "vo",
-    "Wildfire": "wf",
 }
 
 disaster_subtype_to_hazard_map = {
@@ -43,8 +42,6 @@ disaster_subtype_to_hazard_map = {
     "Extra-tropical storm": "ew",
     "Rockfall": "ls",
     "Lava flow": "vo",
-    "Forest fire": "wf",
-    "Land fire (Brush, Bush, Pasture)": "wf",
     "Pyroclastic flow": "vo",
     "Lahar": "vo",
 }
@@ -64,7 +61,7 @@ associated_disaster_to_hazard_map = {
     "Cold wave": "cw",
     "Water shortage": "exclude",
     "Heat wave": "hw",
-    "Wildfire": "wf",
+    "Wildfire": "exclude",
     "Famine": "exclude",
     "Transport accident": "exclude",
     "Snow/ice": "exclude",
@@ -110,7 +107,7 @@ associated_disaster2_to_hazard_map = {
     "Collapse": "exclude",
     "Fire": "exclude",
     "Lightening": "exclude",
-    "Wildfire": "wf",
+    "Wildfire": "exclude",
     "Industrial accidents": "exclude",
     "Storm": "ew",
     "Epidemic": "exclude",
@@ -221,6 +218,7 @@ df_emdat.to_csv(PROCESSED_EMDAT_PATH, index=False)
 # Load
 df_gdis_raw = gpd.read_file(GDIS_PATH)
 
+# %%
 # Create new ISO variable with filled nans as much as possible
 df_gdis_raw["ISO"] = df_gdis_raw["iso3"].fillna(
     df_gdis_raw["country"].map(country_iso_mapping)
@@ -256,3 +254,5 @@ df_impact_short = df_impact.drop(
     axis=1,
 )
 df_impact_short.to_file(PROCESSED_IMPACT_PATH)
+
+# %%
