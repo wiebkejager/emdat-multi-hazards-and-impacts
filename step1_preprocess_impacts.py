@@ -3,8 +3,8 @@ import pandas as pd
 import geopandas as gpd
 
 # %% Define constants
-START_YEAR = 2000
-END_YEAR = 2015
+FIRST_YEAR = 2000
+LAST_YEAR = 2015
 EM_DAT_PATH = "C:/Users/wja209/DATA/RAW/EM-DAT/emdat_public_2023_03_31_query_uid-n7b9hv-natural-sisasters.csv"
 GDIS_PATH = "C:/Users/wja209/DATA/RAW/pend-gdis-1960-2018-disasterlocations-gdb/pend-gdis-1960-2018-disasterlocations.gdb"
 GDIS_CSV_PATH = "C:/Users/wja209/DATA/RAW/pend-gdis-1960-2018-disasterlocations-gdb/pend-gdis-1960-2018-disasterlocations.csv"
@@ -22,6 +22,7 @@ disaster_type_to_hazard_map = {
     "Earthquake": "eq",
     "Landslide": "ls",
     "Volcanic activity": "vo",
+    "Wildfire": "wf",
 }
 
 disaster_subtype_to_hazard_map = {
@@ -42,8 +43,13 @@ disaster_subtype_to_hazard_map = {
     "Extra-tropical storm": "ew",
     "Rockfall": "ls",
     "Lava flow": "vo",
+    "Forest fire": "wf",
+    "Land fire (Brush, Bush, Pasture)": "wf",
+    "Pyroclastic flow": "vo",
+    "Lahar": "vo",
 }
 
+# %%
 associated_disaster_to_hazard_map = {
     "Food shortage": "exclude",
     "Fire": "exclude",
@@ -69,6 +75,19 @@ associated_disaster_to_hazard_map = {
     "Avalanche (Snow, Debris)": "ls",
     "Fog": "exclude",
     "Storm": "ew",
+    "Volcanic activity": "vo",
+    "Fire": "exclude",
+    "Epidemic": "exclude",
+    "Industrial accidents": "exclude",
+    "Insect infestation": "exclude",
+    "Rain": "exclude",
+    "Pollution": "exclude",
+    "Transport accident": "exclude",
+    "Earthquake": "eq",
+    "Explosion": "exclude",
+    "Lightening": "exclude",
+    "Fog": "exclude",
+    "Intoxication": "exclude",
 }
 
 # %% Map Associated 2 to Hazard 3
@@ -95,6 +114,16 @@ associated_disaster2_to_hazard_map = {
     "Industrial accidents": "exclude",
     "Storm": "ew",
     "Epidemic": "exclude",
+    "Volcanic activity": "vo",
+    "Crop failure": "exclude",
+    "Transport accident": "exclude",
+    "Water shortage": "exclude",
+    "Drought": "dr",
+    "Heat wave": "hw",
+    "Fog": "exclude",
+    "Oil spill": "exclude",
+    "Liquefaction": "exclude",
+    "Insect infestation": "exclude",
 }
 
 # %% Load emdat data
@@ -122,6 +151,8 @@ df_emdat_raw = pd.read_csv(
     },
 )
 
+
+# %% Select events in revelant time period
 df_emdat_raw["Start Date"] = pd.to_datetime(
     df_emdat_raw[["Start Year", "Start Month", "Start Day"]].rename(
         columns={"Start Year": "year", "Start Month": "month", "Start Day": "day"}
@@ -135,10 +166,8 @@ df_emdat_raw["End Date"] = pd.to_datetime(
     utc=True,
 )
 
-
-# %% Select events in revelant time period
-time_filter = (df_emdat_raw["Start Year"] >= START_YEAR) & (
-    df_emdat_raw["End Year"] <= END_YEAR
+time_filter = (df_emdat_raw["Start Year"] >= FIRST_YEAR) & (
+    df_emdat_raw["Start Year"] <= LAST_YEAR
 )
 
 df_emdat = df_emdat_raw[time_filter].drop(
@@ -151,6 +180,7 @@ df_emdat = df_emdat_raw[time_filter].drop(
 df_emdat.loc[:, "Hazard1"] = df_emdat["Disaster Subtype"].map(
     disaster_subtype_to_hazard_map
 )
+
 # For resulting nan's use Type to map Hazard 1
 df_emdat.loc[df_emdat["Hazard1"].isna(), "Hazard1"] = df_emdat[
     df_emdat["Hazard1"].isna()
