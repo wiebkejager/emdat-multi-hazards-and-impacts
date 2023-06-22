@@ -8,10 +8,10 @@ START_YEAR = 2000
 END_YEAR = 2015
 EXPOSURE_PATH_1 = "C:/Users/wja209/DATA/RAW/WorldPop/"
 PROCESSED_IMPACT_AND_VUL_PATH = (
-    "C:/Users/wja209/DATA/PROCESSED/impact_vulnerability_1990_2015.gpkg"
+    "C:/Users/wja209/DATA/PROCESSED/impact_vulnerability_2000_2015.gpkg"
 )
 PROCESSED_IMPACT_EXP_AND_VUL_PATH = (
-    "C:/Users/wja209/DATA/PROCESSED/impact_exposure_vulnerability_1990_2015.gpkg"
+    "C:/Users/wja209/DATA/PROCESSED/impact_exposure_vulnerability_2000_2015.gpkg"
 )
 
 # %%

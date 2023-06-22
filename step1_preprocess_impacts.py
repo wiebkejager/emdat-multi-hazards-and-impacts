@@ -8,11 +8,11 @@ LAST_YEAR = 2015
 EM_DAT_PATH = "C:/Users/wja209/DATA/RAW/EM-DAT/emdat_public_2023_03_31_query_uid-n7b9hv-natural-sisasters.csv"
 GDIS_PATH = "C:/Users/wja209/DATA/RAW/pend-gdis-1960-2018-disasterlocations-gdb/pend-gdis-1960-2018-disasterlocations.gdb"
 GDIS_CSV_PATH = "C:/Users/wja209/DATA/RAW/pend-gdis-1960-2018-disasterlocations-gdb/pend-gdis-1960-2018-disasterlocations.csv"
-PROCESSED_IMPACT_PATH_EXT = "C:/Users/wja209/DATA/PROCESSED/impact_1990_2015_ext.gpkg"
-PROCESSED_IMPACT_PATH = "C:/Users/wja209/DATA/PROCESSED/impact_1990_2015.gpkg"
-PROCESSED_GDIS_PATH = "C:/Users/wja209/DATA/PROCESSED/gdis_1990_2015.gpkg"
-PROCESSED_EMDAT_PATH = "C:/Users/wja209/DATA/PROCESSED/emdat_1990_2015.csv"
-PROCESSED_IMPACT_CSVPATH_EXT = "C:/Users/wja209/DATA/PROCESSED/impact_1990_2015.csv"
+PROCESSED_IMPACT_PATH_EXT = "C:/Users/wja209/DATA/PROCESSED/impact_2000_2015_ext.gpkg"
+PROCESSED_IMPACT_PATH = "C:/Users/wja209/DATA/PROCESSED/impact_2000_2015.gpkg"
+PROCESSED_GDIS_PATH = "C:/Users/wja209/DATA/PROCESSED/gdis_2000_2015.gpkg"
+PROCESSED_EMDAT_PATH = "C:/Users/wja209/DATA/PROCESSED/emdat_2000_2015.csv"
+PROCESSED_IMPACT_CSVPATH_EXT = "C:/Users/wja209/DATA/PROCESSED/impact_2000_2015.csv"
 
 # %% Disater to hazard mappings. These are used to select the relevant events in the emdat data set
 disaster_type_to_hazard_map = {
@@ -141,6 +141,7 @@ df_emdat_raw = pd.read_csv(
         "Disaster Subtype",
         "Associated Dis",
         "Associated Dis2",
+        "Total Deaths",
         "Total Affected",
         "Country",
         "Continent",
@@ -233,16 +234,16 @@ df_gdis_raw = df_gdis_raw[df_gdis_raw["Dis No"].isin(df_emdat["Dis No"])][
 ]
 
 # Aggregate to 1 geometry per disaster event
-df_gdis_1990_2015 = df_gdis_raw.dissolve("Dis No")
+df_gdis_2000_2015 = df_gdis_raw.dissolve("Dis No")
 
 # Save processed gdis file
-df_gdis_1990_2015.to_file(PROCESSED_GDIS_PATH, driver="GPKG")
+df_gdis_2000_2015.to_file(PROCESSED_GDIS_PATH, driver="GPKG")
 
 # %% Alternatively load processed gdis file
-# df_gdis_1990_2015 = gpd.read_file(PROCESSED_GDIS_PATH)
+# df_gdis_2000_2015 = gpd.read_file(PROCESSED_GDIS_PATH)
 
 # %% Merge impact with disaster locations
-df_impact = df_gdis_1990_2015.merge(right=df_emdat, how="inner", on="Dis No")
+df_impact = df_gdis_2000_2015.merge(right=df_emdat, how="inner", on="Dis No")
 
 # %% Save merged file
 # Save extended version.

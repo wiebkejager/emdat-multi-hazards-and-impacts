@@ -22,7 +22,7 @@ def find_overlapping_hazard(
         right=gdf_impact[hazard_filter], how="cross", suffixes=["_hazard", "_impact"]
     )
 
-    # Filter out hazards without temporal overlap
+    # Filter hazards with temporal overlap
     temporal_filter = (
         (df_hazard_impact["starttime"] >= df_hazard_impact["Start Date"])
         & (df_hazard_impact["starttime"] <= df_hazard_impact["End Date"])
@@ -32,7 +32,7 @@ def find_overlapping_hazard(
     )
     df_hazard_impact = df_hazard_impact[temporal_filter]
 
-    # Filter out hazards with out spatial overlap
+    # Filter hazards with spatial overlap
     spatial_filter = gpd.GeoSeries(df_hazard_impact["geometry_hazard"]).intersects(
         gpd.GeoSeries(df_hazard_impact["geometry_impact"])
     )
