@@ -115,9 +115,9 @@ for hazard in hazards:
     gdf_impact = gdf_impact[~hazard_nan_filter]
 
     # Hazard intensities are 0, if hazard did not manifest itself
-    nan_filter = gdf_impact_geometries["Intensity_" + hazard].isna()
-    gdf_impact_geometries.loc[nan_filter, "Intensity_" + hazard] = 0
-    gdf_impact.loc[nan_filter, "Intensity_" + hazard] = 0
+    # nan_filter = gdf_impact_geometries["Intensity_" + hazard].isna()
+    # gdf_impact_geometries.loc[nan_filter, "Intensity_" + hazard] = 0
+    # gdf_impact.loc[nan_filter, "Intensity_" + hazard] = 0
 
 # %% Save combined hazard impact with and without geometries for further analysis
 gdf_impact_geometries.to_csv(PROCESSED_IMPACT_PATH2_GEOM_CSV, index=False)
