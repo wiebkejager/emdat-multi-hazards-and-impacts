@@ -4,6 +4,9 @@ import tensorflow as tf
 from tensorflow.keras import Sequential
 from tensorflow.keras.layers import Dense
 from tensorflow.keras.losses import BinaryCrossentropy
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.tree import export_graphviz
+import pydot
 import seaborn as sns
 import numpy as np
 
@@ -76,10 +79,6 @@ foo_filter = df["GDP per Capita PPP"] >= 10000
 
 
 # %%
-numeric_features = df.drop(columns=["Total Deaths"])
-target = df["Total Deaths"]
-
-# %%
 vars = [
     "GDP per Capita PPP",
     "Population Count",
@@ -128,10 +127,40 @@ model = Sequential(
 )
 
 model.compile(loss=BinaryCrossentropy())
-model.fit(train_features, target, epochs=100)
+model.fit(train_features, train_labels, epochs=100)
 
+# %%
 # Quick evaluation
 total_death_predicted = model.predict(np.array(train_features))
-sns.scatterplot(x=target.values, y=total_death_predicted.squeeze())
+ax = sns.scatterplot(x=train_labels.values, y=total_death_predicted.squeeze())
+ax.set(xlabel="True Total Deaths", ylabel="Predicted Total Deaths")
+
+
+# %% Random Forest Model
+
+# Instantiate model with 1000 decision trees
+rf = RandomForestRegressor(n_estimators=10, random_state=42, max_depth=5)
+# Train the model on training data
+rf.fit(train_features, train_labels)
+
+# %%
+# Use the forest's predict method on the training data
+predictions = rf.predict(train_features)
+ax = sns.scatterplot(x=train_labels.values, y=predictions)
+ax.set(xlabel="True Total Deaths", ylabel="Predicted Total Deaths")
+
+# %% Plot tree
+tree = rf.estimators_[5]
+# Save the tree as a png image
+export_graphviz(
+    tree,
+    out_file="tree.dot",
+    feature_names=list(train_features.columns),
+    rounded=True,
+    precision=1,
+)
+# %%
+(graph,) = pydot.graph_from_dot_file("tree.dot")
+graph.write_png("tree.png")
 
 # %%
