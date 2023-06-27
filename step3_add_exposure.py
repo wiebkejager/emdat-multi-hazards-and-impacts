@@ -13,6 +13,12 @@ PROCESSED_IMPACT_AND_VUL_PATH = (
 PROCESSED_IMPACT_EXP_AND_VUL_PATH = (
     "C:/Users/wja209/DATA/PROCESSED/impact_exposure_vulnerability_2000_2015.gpkg"
 )
+PROCESSED_IMPACT_EXP_AND_VUL_PATH_CSV = (
+    "C:/Users/wja209/DATA/PROCESSED/impact_exposure_vulnerability_2000_2015.csv"
+)
+PROCESSED_IMPACT_EXP_AND_VUL_PATH_CSV2 = (
+    "C:/Users/wja209/DATA/PROCESSED/impact_exposure_vulnerability_2000_2015_nogeom.csv"
+)
 
 # %%
 gdf_impact = gpd.read_file(PROCESSED_IMPACT_AND_VUL_PATH)
@@ -41,3 +47,7 @@ for year in impact_years:
 gdf_impact.to_file(PROCESSED_IMPACT_EXP_AND_VUL_PATH)
 
 # %%
+gdf_impact.to_csv(PROCESSED_IMPACT_EXP_AND_VUL_PATH_CSV, index=False)
+gdf_impact.drop("geometry", axis=1).reset_index().to_csv(
+    PROCESSED_IMPACT_EXP_AND_VUL_PATH_CSV2, index=False
+)

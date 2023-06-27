@@ -43,10 +43,16 @@ df_cross = gdf_impact.reset_index().merge(
 filter = df_cross["Dis No_1"] == df_cross["Dis No_2"]
 df_cross = df_cross[~filter]
 
+df_cross["keys"] = df_cross[["Dis No_1", "Dis No_2"]].apply(
+    lambda x: ",".join(sorted(list(x.dropna()))), axis=1
+)
+
+df_cross = df_cross.drop_duplicates(subset="keys", keep="first")
+
 # %%   Filter hazards with spatial overlap
 spatial_filter = gpd.GeoSeries(df_cross["geometry_1"]).intersects(
     gpd.GeoSeries(df_cross["geometry_2"])
 )
-df_cross = df_cross[spatial_filter]
+df_cross_overlaps = df_cross[spatial_filter]
 
 # %%

@@ -141,13 +141,13 @@ df_emdat_raw = pd.read_csv(
         "Disaster Subtype",
         "Associated Dis",
         "Associated Dis2",
+        "Dis Mag Value",
+        "Dis Mag Scale",
         "Total Deaths",
         "Total Affected",
         "Country",
         "Continent",
         "ISO",
-        "Dis Mag Value",
-        "Dis Mag Scale",
     },
 )
 
@@ -217,32 +217,32 @@ country_iso_mapping = dict(
 df_emdat.to_csv(PROCESSED_EMDAT_PATH, index=False)
 
 
-# %% Process GDIS file to include relevant time period and hazards and save
-# Load
-gdf_gdis_raw = gpd.read_file(GDIS_PATH)
+# # %% Process GDIS file to include relevant time period and hazards and save
+# # Load
+# gdf_gdis_raw = gpd.read_file(GDIS_PATH)
 
-# %%
-# Create new ISO variable with filled nans as much as possible
-gdf_gdis_raw["ISO"] = gdf_gdis_raw["iso3"].fillna(
-    gdf_gdis_raw["country"].map(country_iso_mapping)
-)
+# # %%
+# # Create new ISO variable with filled nans as much as possible
+# gdf_gdis_raw["ISO"] = gdf_gdis_raw["iso3"].fillna(
+#     gdf_gdis_raw["country"].map(country_iso_mapping)
+# )
 
-# Create new Dis No variable in same format as emdat data set
-gdf_gdis_raw["Dis No"] = gdf_gdis_raw["disasterno"] + "-" + gdf_gdis_raw["ISO"]
+# # Create new Dis No variable in same format as emdat data set
+# gdf_gdis_raw["Dis No"] = gdf_gdis_raw["disasterno"] + "-" + gdf_gdis_raw["ISO"]
 
-# Drop all data that is not in filtered emdat data set
-gdf_gdis_raw = gdf_gdis_raw[gdf_gdis_raw["Dis No"].isin(df_emdat["Dis No"])][
-    ["Dis No", "geometry"]
-]
+# # Drop all data that is not in filtered emdat data set
+# gdf_gdis_raw = gdf_gdis_raw[gdf_gdis_raw["Dis No"].isin(df_emdat["Dis No"])][
+#     ["Dis No", "geometry"]
+# ]
 
-# Aggregate to 1 geometry per disaster event
-gdf_gdis_2000_2015 = gdf_gdis_raw.dissolve("Dis No")
+# # Aggregate to 1 geometry per disaster event
+# gdf_gdis_2000_2015 = gdf_gdis_raw.dissolve("Dis No")
 
-# Save processed gdis file
-gdf_gdis_2000_2015.to_file(PROCESSED_GDIS_PATH, driver="GPKG")
+# # Save processed gdis file
+# gdf_gdis_2000_2015.to_file(PROCESSED_GDIS_PATH, driver="GPKG")
 
 # %% Alternatively load processed gdis file
-# df_gdis_2000_2015 = gpd.read_file(PROCESSED_GDIS_PATH)
+gdf_gdis_2000_2015 = gpd.read_file(PROCESSED_GDIS_PATH)
 
 # %% Merge impact with disaster locations
 gdf_impact = gdf_gdis_2000_2015.merge(right=df_emdat, how="inner", on="Dis No")
@@ -256,9 +256,12 @@ gdf_impact["Affected Area"] = (
 # Save extended version.
 gdf_impact.to_file(PROCESSED_IMPACT_PATH_EXT)
 
+# %%
 # Drop more columns and save short (standard) version
 df_impact_short = gdf_impact.drop(
     columns=["Disaster Type", "Disaster Subtype", "Associated Dis", "Associated Dis2"],
     axis=1,
 )
+
+# %%
 df_impact_short.to_file(PROCESSED_IMPACT_PATH)

@@ -49,3 +49,53 @@ def find_overlapping_hazard(
     )
 
     return gdf_hazard_impact
+
+
+# rom rtree import index
+from rtree import index
+from shapely.geometry import shape
+
+
+def find_intersecting_polygons(xs: gpd.GeoSeries, ys: gpd.GeoSeries) -> pd.Series:
+    """Return indices of xs and ys that have spatial overlap"""
+
+    intersect_indices = []
+
+    xs_spatial_index = xs.sindex
+
+    for iy, y in ys.iterows():
+        xs_possible_matches_index = list(
+            xs_spatial_index.intersection(y["geometry"].bounds)
+        )
+        xs_possible_matches = xs.iloc[xs_possible_matches_index]
+        xs_precise_match_index = xs_possible_matches.intersects(y["geometry"])
+        if xs_precise_match_index:
+            intersect_indices.append([xs_precise_match_index, iy])
+
+    return intersect_indices
+
+
+from shapely.strtree import STRtree
+
+
+def find_intersecting_polygons2(
+    gdf_x: gpd.GeoDataFrame, gdf_y: gpd.GeoDataFrame
+) -> list:
+    """Return indices of xs and ys that have spatial overlap"""
+
+    intersect_indices = []
+
+    tree = STRtree(gdf_x["geometry"])
+
+    for iy, rowy in gdf_y.iterows():
+        xs_match_index = tree.query(rowy["geometry"])
+        if xs_match_index:
+            intersect_indices.append([xs_match_index, iy])
+
+    return intersect_indices
+
+
+def merge_gdfs_based_on_intersect_indices(
+    gdf_x: gpd.GeoDataFrame, gdf_y: gpd.GeoDataFrame, intersect_indices: list
+) -> gpd.GeoDataFrame:
+    gdf_x

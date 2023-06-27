@@ -127,7 +127,7 @@ ax3.axvline(x=df.loc[~multi_filter, "Intensity_ls"].mean(), color="#49759c")
 
 
 # %%
-df["Total Deaths"] = df["Total Deaths"] + np.random.normal(0, 1, size=len(df))
+df["otaTl Deaths"] = df["Total Deaths"] + np.random.normal(0, 1, size=len(df))
 df["Intensity_fl"] = df["Intensity_fl"] + np.random.normal(0, 1, size=len(df))
 df["Intensity_eq"] = df["Intensity_eq"] + np.random.normal(0, 1, size=len(df))
 df["Intensity_ew"] = df["Intensity_ew"] + np.random.normal(0, 1, size=len(df))
@@ -144,9 +144,11 @@ vars = [
     "Intensity_ls",
 ]
 
+death_filter = df["otaTl Deaths"] < 2000
+
 sns.pairplot(
     df.loc[
-        :,
+        death_filter,
         vars,
     ].replace(0, np.nan),
     diag_kind="kde",
@@ -209,8 +211,8 @@ for detailed_type in detailed_types:
         except:
             corr = list([np.nan, np.nan])
 
-        if corr[1] <= 0.05:
-            correlations_deaths.loc[detailed_type, column] = np.round(corr[0], 2)
+        # if corr[1] <= 0.05:
+        correlations_deaths.loc[detailed_type, column] = np.round(corr[0], 2)
 
 # %%
 for column in columns[0:6]:
@@ -221,8 +223,8 @@ for column in columns[0:6]:
         df.loc[:, "Total Deaths"],
         nan_policy="omit",
     )
-    if corr[1] <= 0.05:
-        correlations_deaths_all.loc[0, column] = np.round(corr[0], 2)
+    # if corr[1] <= 0.05:
+    #     correlations_deaths_all.loc[0, column] = np.round(corr[0], 2)
 
     # correlations_deaths.loc[detailed_type, column] = list(
     #     [np.round(corr[0], 2), np.round(corr[1], 2)]
