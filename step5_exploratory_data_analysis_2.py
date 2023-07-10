@@ -31,21 +31,21 @@ df.loc[:, "eventtype_detailed"].value_counts()
 
 
 # %%
-df.loc[:, "Duration"] = (
-    (
-        pd.to_datetime(df.loc[:, "End Date"]) - pd.to_datetime(df.loc[:, "Start Date"])
-    ).dt.total_seconds()
-    / 60
-    / 60
-    / 24
-)  # in days
+# df.loc[:, "Duration"] = (
+#     (
+#         pd.to_datetime(df.loc[:, "End Date"]) - pd.to_datetime(df.loc[:, "Start Date"])
+#     ).dt.total_seconds()
+#     / 60
+#     / 60
+#     / 24
+# )  # in days
 
 
 # %%
 vars = [
-    "Total Affected",
-    "Population Count",
-    "GDP per Capita PPP",
+    "Total Deaths",
+    "Intensity_fl",
+    "Intensity_ew",
     "Duration",
 ]
 

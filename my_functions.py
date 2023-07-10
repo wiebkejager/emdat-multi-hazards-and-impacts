@@ -52,7 +52,6 @@ def find_overlapping_hazard(
 
 
 # rom rtree import index
-from rtree import index
 from shapely.geometry import shape
 
 

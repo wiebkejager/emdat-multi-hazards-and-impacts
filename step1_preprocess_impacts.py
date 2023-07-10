@@ -145,6 +145,7 @@ df_emdat_raw = pd.read_csv(
         "Dis Mag Scale",
         "Total Deaths",
         "Total Affected",
+        "Total Damages, Adjusted ('000 US$')",
         "Country",
         "Continent",
         "ISO",

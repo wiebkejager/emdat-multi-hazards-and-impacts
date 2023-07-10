@@ -64,16 +64,34 @@ vars = [
 sns.pairplot(
     df.loc[
         :,
-        vars,
+        vars + ["eventtype"],
     ],
     diag_kind="kde",
+    hue="eventtype",
+    plot_kws={"s": 6},
 )
 
+
+event_filter = df["eventtype"] == "single-hazard"
+
 df_ranks = df.copy()
-df_ranks.loc[:, vars] = (
-    df_ranks.loc[:, vars].rank() / df_ranks.loc[:, vars].rank().max()
+df_ranks.loc[event_filter, vars] = (
+    df_ranks.loc[event_filter, vars].rank()
+    / df_ranks.loc[event_filter, vars].rank().max()
 )
-sns.pairplot(df_ranks.loc[:, vars], diag_kind="hist")
+
+df_ranks.loc[~event_filter, vars] = (
+    df_ranks.loc[~event_filter, vars].rank()
+    / df_ranks.loc[~event_filter, vars].rank().max()
+)
+
+sns.pairplot(
+    df_ranks.loc[:, vars + ["eventtype"]],
+    diag_kind="hist",
+    hue="eventtype",
+    plot_kws={"s": 6},
+)
+
 
 # %% Correlations event types
 correlations = pd.DataFrame(
