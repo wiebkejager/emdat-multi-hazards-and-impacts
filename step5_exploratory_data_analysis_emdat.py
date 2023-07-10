@@ -457,7 +457,7 @@ data.to_csv("available_data_count.csv", sep=";")
 # %%
 hazard_group = ["fl", "ew", "ew,fl"]
 
-fig, (ax2, ax3, ax4) = plt.subplots(
+fig, (ax3, ax4, ax2) = plt.subplots(
     1,
     3,
     figsize=(10, 5),
