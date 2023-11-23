@@ -14,12 +14,12 @@ df = pd.read_csv(PROCESSED_EMDAT_PATH).set_index("Dis No")
 df.loc[:, "eventtype"] = df[["Hazard1", "Hazard2", "Hazard3"]].apply(
     lambda x: "multi-hazard" if sum(x.isna()) <= 1 else "single-hazard", axis=1
 )
-# Add column indicating single-hazard or multi-hazard
+# Add column indicating event sequence
 df.loc[:, "eventtype_detailed"] = df[["Hazard1", "Hazard2", "Hazard3"]].apply(
     lambda x: ",".join(sorted(list(x.dropna()))), axis=1
 )
 
-# Add column indicating single-hazard or multi-hazard
+# Add column indicating event set alphabetically
 df.loc[:, "eventtype_detailed_unsrt"] = df[["Hazard1", "Hazard2", "Hazard3"]].apply(
     lambda x: ",".join(list(x.dropna())), axis=1
 )
@@ -71,7 +71,7 @@ sns.boxplot(
 ).set(xlabel=None)
 ax1.grid()
 ax1.set_xticklabels(ax1.get_xticklabels(), rotation=90)
-ax1.set_ylabel("Count of events")
+ax1.set_ylabel("Total Deaths")
 ax1.set_title("(a)")
 
 sns.boxplot(
@@ -84,7 +84,7 @@ sns.boxplot(
 ).set(xlabel=None)
 ax2.grid()
 ax2.set_xticklabels(ax2.get_xticklabels(), rotation=90)
-ax2.set_ylabel("Count of events")
+ax2.set_ylabel("Total Deaths")
 ax2.set_title("(b)")
 fig.tight_layout()
 
