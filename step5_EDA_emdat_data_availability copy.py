@@ -53,7 +53,7 @@ for p in ax2.patches:
     )
 fig.tight_layout()
 
-# %% Show missing data per event type
+# %% Get missing data per event type
 
 # indices = [
 #     "fl",
@@ -109,7 +109,7 @@ impact_var = "Total Damages, Adjusted ('000 US$')"
 # impact_var = "Total Deaths"
 
 # %%
-indices = list(df["Country"].unique())
+indices = list(df["Continent"].unique())
 data1 = pd.DataFrame(
     index=indices,
     columns=["Missing", "Available"],
@@ -120,7 +120,7 @@ data2 = pd.DataFrame(
 )
 
 for index in indices:
-    filter = df["Country"] == index
+    filter = df["Continent"] == index
     data1.loc[index, "Missing"] = (
         df.loc[filter, impact_var].isna().sum()  # / filter.sum()
     )

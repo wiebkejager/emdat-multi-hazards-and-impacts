@@ -165,4 +165,19 @@ for ax in axs.reshape(-1):
 
 fig.tight_layout()
 
-# %%
+# %% Bootstrap distribution mean damages: I.e. if and only if Z = X + Y than E(Z) = E(X) + E(Y)
+df_bs = pd.DataFrame(
+    columns=["sample_id", "event_type", "impact_type", "factor"],
+)
+
+i = 1
+impact_vars = ["Total Damages, Adjusted ('000 US$')", "Total Affected", "Total Deaths"]
+for hazard_pair in hazard_pairs:
+    [haz1, haz2] = hazard_pair.split(",")
+
+    filter12 = df.loc[df.loc[:, "eventtype_detailed"] == hazard_pair]
+
+
+
+def get_bs_sample(df, x):
+    
