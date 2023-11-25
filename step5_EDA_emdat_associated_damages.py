@@ -165,19 +165,54 @@ for ax in axs.reshape(-1):
 
 fig.tight_layout()
 
+
+# %% Functions
+def get_bs_sample_df(df: pd.DataFrame, haz: str) -> pd.DataFrame:
+    filter = df.loc[
+        df.loc[:, "eventtype_detailed"] == haz
+    ]  # get indices of data rows that correspond to hazard of interest
+    df_filtered = df[filter]  # get data rows that correspond to hazard
+    n_bs = len(df_filtered)  # size of bootstrap sample
+    df_new = df_filtered.sample(
+        n_bs, replace=True
+    )  # create bootstrap sample of size n_bs
+    return df_new
+
+
+# %%
+def get_impact_mean(df_haz: pd.DataFrame, impact_var: str) -> float:
+    impact_mean = df_haz[impact_var].mean()
+    return impact_mean
+
+
 # %% Bootstrap distribution mean damages: I.e. if and only if Z = X + Y than E(Z) = E(X) + E(Y)
 df_bs = pd.DataFrame(
     columns=["sample_id", "event_type", "impact_type", "factor"],
 )
 
 i = 1
+N = 1000
 impact_vars = ["Total Damages, Adjusted ('000 US$')", "Total Affected", "Total Deaths"]
+
 for hazard_pair in hazard_pairs:
     [haz1, haz2] = hazard_pair.split(",")
+    df_bs_haz1 = get_bs_sample_df(df, haz1)
+    df_bs_haz2 = get_bs_sample_df(df, haz2)
+    df_bs_haz12 = get_bs_sample_df(df, hazard_pair)
 
-    filter12 = df.loc[df.loc[:, "eventtype_detailed"] == hazard_pair]
+    for n in range(N):
+        for impact_var in impact_vars:
+            factor_bs = get_impact_mean(df_bs_haz12) / (
+                get_impact_mean(df_bs_haz1) + get_impact_mean(df_bs_haz2)
+            )
+            new_row = dict(
+                {
+                    "sample_id": 1,
+                    "event_type": hazard_pair,
+                    "impact_type": impact_var,
+                    "factor": factor_bs,
+                }
+            )
+            df_bs.append(new_row, ignore_index=True)
 
-
-
-def get_bs_sample(df, x):
-    
+        i = i + 1
