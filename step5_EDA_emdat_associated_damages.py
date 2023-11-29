@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import missingno as msno
+from my_functions import get_bs_sample_df, get_impact_mean
 
 # %% Constants
 PROCESSED_EMDAT_PATH = "C:/Users/wja209/DATA/PROCESSED/emdat_2000_2015.csv"
@@ -166,53 +167,48 @@ for ax in axs.reshape(-1):
 fig.tight_layout()
 
 
-# %% Functions
-def get_bs_sample_df(df: pd.DataFrame, haz: str) -> pd.DataFrame:
-    filter = df.loc[
-        df.loc[:, "eventtype_detailed"] == haz
-    ]  # get indices of data rows that correspond to hazard of interest
-    df_filtered = df[filter]  # get data rows that correspond to hazard
-    n_bs = len(df_filtered)  # size of bootstrap sample
-    df_new = df_filtered.sample(
-        n_bs, replace=True
-    )  # create bootstrap sample of size n_bs
-    return df_new
-
-
-# %%
-def get_impact_mean(df_haz: pd.DataFrame, impact_var: str) -> float:
-    impact_mean = df_haz[impact_var].mean()
-    return impact_mean
-
-
 # %% Bootstrap distribution mean damages: I.e. if and only if Z = X + Y than E(Z) = E(X) + E(Y)
+cols = ["sample_id", "event_type", "impact_type", "factor"]
 df_bs = pd.DataFrame(
-    columns=["sample_id", "event_type", "impact_type", "factor"],
+    columns=cols,
 )
 
-i = 1
-N = 1000
+n = 1
+N = 10
 impact_vars = ["Total Damages, Adjusted ('000 US$')", "Total Affected", "Total Deaths"]
 
 for hazard_pair in hazard_pairs:
     [haz1, haz2] = hazard_pair.split(",")
-    df_bs_haz1 = get_bs_sample_df(df, haz1)
-    df_bs_haz2 = get_bs_sample_df(df, haz2)
-    df_bs_haz12 = get_bs_sample_df(df, hazard_pair)
-
     for n in range(N):
-        for impact_var in impact_vars:
-            factor_bs = get_impact_mean(df_bs_haz12) / (
-                get_impact_mean(df_bs_haz1) + get_impact_mean(df_bs_haz2)
-            )
-            new_row = dict(
-                {
-                    "sample_id": 1,
-                    "event_type": hazard_pair,
-                    "impact_type": impact_var,
-                    "factor": factor_bs,
-                }
-            )
-            df_bs.append(new_row, ignore_index=True)
+        df_bs_haz1 = get_bs_sample_df(df, haz1)
+        df_bs_haz2 = get_bs_sample_df(df, haz2)
+        df_bs_haz12 = get_bs_sample_df(df, hazard_pair)
 
-        i = i + 1
+        for impact_var in impact_vars:
+            factor = get_impact_mean(df_bs_haz12, impact_var) / (
+                get_impact_mean(df_bs_haz1, impact_var)
+                + get_impact_mean(df_bs_haz2, impact_var)
+            )
+            new_row = pd.DataFrame([[n, hazard_pair, impact_var, factor]], columns=cols)
+            df_bs = pd.concat([df_bs, new_row], ignore_index=True)
+
+        n = n + 1
+
+# %%
+fig, ax = plt.subplots(1, 1)
+ax = sns.boxplot(
+    x="event_type", y="factor", data=df_bs, hue="impact_type", showfliers=False
+)
+plt.yscale("log")
+ax.axhline(1, 0, 1, color="black")
+sns.stripplot(
+    data=tips,
+    x="day",
+    y="total_bill",
+    hue="smoker",
+    hue_order=["Yes", "No"],
+    dodge=True,
+    ax=ax,
+)
+fig.tight_layout()
+# %%
