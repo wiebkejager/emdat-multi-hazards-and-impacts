@@ -92,6 +92,14 @@ for hazard_pair in hazard_pairs:
 df_res = df_res.astype("float64").round(1)
 df_res.to_csv("associated_damages.csv", sep=";")
 
+# %%
+df_res_factor = (
+    df_res.loc[(slice(None), "whole/sum"), :]
+    .reset_index()
+    .melt(id_vars=["first", "second"], var_name="event_type", value_name="factor")
+    .drop("second", axis=1)
+    .rename({"first": "impact_type"}, axis=1)
+)
 
 # %% Boxplots to compare damage distributions
 
@@ -174,7 +182,7 @@ df_bs = pd.DataFrame(
 )
 
 n = 1
-N = 10
+N = 1000
 impact_vars = ["Total Damages, Adjusted ('000 US$')", "Total Affected", "Total Deaths"]
 
 for hazard_pair in hazard_pairs:
@@ -195,20 +203,30 @@ for hazard_pair in hazard_pairs:
         n = n + 1
 
 # %%
-fig, ax = plt.subplots(1, 1)
+fig, ax = plt.subplots(1, 1, figsize=(6, 6))
 ax = sns.boxplot(
     x="event_type", y="factor", data=df_bs, hue="impact_type", showfliers=False
+)
+sns.move_legend(
+    ax,
+    "lower center",
+    bbox_to_anchor=(0.5, 1),
+    ncol=3,
+    title=None,
+    frameon=False,
 )
 plt.yscale("log")
 ax.axhline(1, 0, 1, color="black")
 sns.stripplot(
-    data=tips,
-    x="day",
-    y="total_bill",
-    hue="smoker",
-    hue_order=["Yes", "No"],
+    data=df_res_factor,
+    x="event_type",
+    y="factor",
+    hue="impact_type",
     dodge=True,
+    color="black",
     ax=ax,
+    legend=False,
 )
+ax.yaxis.grid(True)  # Hide the horizontal gridlines
 fig.tight_layout()
 # %%
