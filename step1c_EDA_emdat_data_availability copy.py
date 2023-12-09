@@ -100,8 +100,31 @@ for index in indices:
 
 print(data)
 
+# %%
+data_indicator = data.copy(deep=True)
 
+data_indicator["Total Deaths"] = (data_indicator["Total Deaths"] >= 0.5) & (
+    data_indicator["Total Deaths"] * data_indicator["Event Count"] >= 20
+)
+data_indicator["Total Affected"] = (data_indicator["Total Affected"] >= 0.5) & (
+    data_indicator["Total Affected"] * data_indicator["Event Count"] >= 20
+)
+data_indicator["Total Damages, Adjusted ('000 US$')"] = (
+    data_indicator["Total Damages, Adjusted ('000 US$')"] >= 0.5
+) & (
+    data_indicator["Total Damages, Adjusted ('000 US$')"]
+    * data_indicator["Event Count"]
+    >= 20
+)
+data_indicator = data_indicator.drop(
+    ["Event Count", "Start Date", "End Date", "Dis Mag Value"], axis=1
+)
+
+# %%
 data.to_csv("available_data.csv", sep=";")
+data_indicator.reset_index().rename({"index": "event_type"}, axis=1).to_csv(
+    "data_indicator.csv", sep=";", index=False
+)
 
 # %%
 impact_var = "Total Damages, Adjusted ('000 US$')"

@@ -93,12 +93,64 @@ df_res = df_res.astype("float64").round(1)
 df_res.to_csv("associated_damages.csv", sep=";")
 
 # %%
+data_indicator = pd.read_csv("data_indicator.csv", sep=";")
+data_indicator
+
+# %%
+impact_vars = ["Total Damages, Adjusted ('000 US$')", "Total Affected", "Total Deaths"]
+
+# %%
+df2 = df.copy(deep=True)
+for ix, row in data_indicator.iterrows():
+    hazard_filter = df2.loc[:, "eventtype_detailed"].isin([row.event_type])
+    for impact_var in impact_vars:
+        if row[impact_var] == False:
+            df2.loc[hazard_filter, impact_var] = np.nan
+
+
+# %%
 df_res_factor = (
     df_res.loc[(slice(None), "whole/sum"), :]
     .reset_index()
     .melt(id_vars=["first", "second"], var_name="event_type", value_name="factor")
     .drop("second", axis=1)
     .rename({"first": "impact_type"}, axis=1)
+)
+
+# %%
+cwew_hazards = ["cw", "ew", "cw,ew"]
+foo = df2[df2.loc[:, "eventtype_detailed"].isin(cwew_hazards)].dropna(
+    subset="Total Deaths"
+)
+
+# %%
+foo["Duration"] = (
+    (
+        pd.to_datetime(foo.loc[:, "End Date"])
+        - pd.to_datetime(foo.loc[:, "Start Date"])
+    ).dt.total_seconds()
+    / 60
+    / 60
+    / 24
+)  # in days
+
+# %%
+sns.histplot(data=foo, x="Continent", hue="eventtype_detailed", multiple="stack")
+
+# %%
+sns.boxplot(
+    data=foo,
+    y="Dis Mag Value",
+    x="eventtype_detailed_unsrt",
+    showfliers=False,
+)
+
+# %%
+sns.boxplot(
+    data=foo,
+    y="Duration",
+    x="eventtype_detailed_unsrt",
+    showfliers=False,
 )
 
 # %% Boxplots to compare damage distributions
@@ -151,6 +203,7 @@ impacts = [
 ]
 
 i = 0
+
 for ax in axs.reshape(-1):
     hazard_group = hazard_groups[i]
     hazard_filter = df.loc[:, "eventtype_detailed"].isin(hazard_group)
@@ -161,15 +214,36 @@ for ax in axs.reshape(-1):
         ax=ax,
         order=hazard_group,
         showfliers=False,
-        showmeans=True,
+        showmeans=False,
         meanprops={
             # "marker": "s",
             "markerfacecolor": "black",
             "markeredgecolor": "black",
         },
     ).set(xlabel="Hazard Type")
+    # ax.semilogy(base=2)
     ax.grid()
     ax.set_xticklabels(ax.get_xticklabels())
+
+    # # Calculate number of obs per group & median to position labels
+    # medians = df.groupby(["eventtype_detailed"])[impacts[i]].median().values
+    # nobs = df["eventtype_detailed"].value_counts().values
+    # nobs = [str(x) for x in nobs.tolist()]
+    # nobs = ["n: " + i for i in nobs]
+
+    # # Add it to the plot
+    # pos = range(len(nobs))
+    # for tick, label in zip(pos, ax.get_xticklabels()):
+    #     ax.text(
+    #         pos[tick],
+    #         medians[tick],
+    #         nobs[tick],
+    #         horizontalalignment="center",
+    #         size="x-small",
+    #         color="w",
+    #         weight="semibold",
+    #     )
+
     i = i + 1
 
 fig.tight_layout()
@@ -203,9 +277,39 @@ for hazard_pair in hazard_pairs:
         n = n + 1
 
 # %%
-fig, ax = plt.subplots(1, 1, figsize=(6, 6))
-ax = sns.boxplot(
-    x="event_type", y="factor", data=df_bs, hue="impact_type", showfliers=False
+fig, ax = plt.subplots(1, 1, figsize=(8, 6))
+# ax = sns.boxplot(
+#     x="event_type",
+#     y="factor",
+#     data=df_bs,
+#     hue="impact_type",
+#     showfliers=False,
+#     whis=(2.5, 97.5),
+# )
+
+ax = sns.pointplot(
+    x="event_type",
+    y="factor",
+    hue="impact_type",
+    data=df_bs,
+    dodge=0.2,
+    join=False,
+    errorbar=("pi", 95),
+    markers="|",
+    legend=False,
+)
+
+
+plt.yscale("log")
+ax.axhline(1, 0, 1, color="black")
+ax = sns.pointplot(
+    x="event_type",
+    y="factor",
+    hue="impact_type",
+    data=df_res_factor,
+    dodge=0.2,
+    errorbar=("pi", 0),
+    join=False,
 )
 sns.move_legend(
     ax,
@@ -215,18 +319,8 @@ sns.move_legend(
     title=None,
     frameon=False,
 )
-plt.yscale("log")
-ax.axhline(1, 0, 1, color="black")
-sns.stripplot(
-    data=df_res_factor,
-    x="event_type",
-    y="factor",
-    hue="impact_type",
-    dodge=True,
-    color="black",
-    ax=ax,
-    legend=False,
-)
+
 ax.yaxis.grid(True)  # Hide the horizontal gridlines
 fig.tight_layout()
+
 # %%
