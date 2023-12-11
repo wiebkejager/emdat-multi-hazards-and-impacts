@@ -162,3 +162,5 @@ cython_debug/
 # data
 impact_2000_2015.gpkg
 data_indicator.csv
+event_pairs.csv
+impact_exposure_vulnerability_2000_2015.csv

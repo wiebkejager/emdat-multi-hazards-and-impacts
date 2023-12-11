@@ -1,17 +1,30 @@
 # %% Imports
 import geopandas as gpd
+import pandas as pd
+from shapely import wkt
 import itertools
 import threading
 
 # %% Define constants
 START_YEAR = 2000
 END_YEAR = 2015
-PROCESSED_IMPACT_PATH = "impact_2000_2015.gpkg"
+PROCESSED_IMPACT_PATH = "impact_exposure_vulnerability_2000_2015.csv"
+# "impact_2000_2015.gpkg"
 
 # %% Load impact data
-gdf_impact_geometries = gpd.read_file(PROCESSED_IMPACT_PATH)
-gdf_impact = gdf_impact_geometries.copy()
+gdf_impact = pd.read_csv(PROCESSED_IMPACT_PATH)
 gdf_impact.set_index("Dis No", inplace=True)
+
+# %%
+gdf_impact["geometry"] = gpd.GeoSeries.from_wkt(gdf_impact["geometry"])
+gdf_impact = gpd.GeoDataFrame(
+    gdf_impact,
+    geometry=gdf_impact["geometry"],
+)
+
+# gpd.read_file(PROCESSED_IMPACT_PATH)
+# gdf_impact = gdf_impact_geometries.copy()
+
 
 # %% Create list of indices of all possible event combinations
 event_indices = gdf_impact.index.values
@@ -53,4 +66,7 @@ print(event_combinations)
 
 
 # %%
-event_combinations.to_csv("event_pairs.csv", sep=";")
+df = pd.DataFrame(event_combinations, columns=["Event1", "Event2"])
+df.to_csv("event_pairs.csv", sep=";", index=False)
+
+# %%
