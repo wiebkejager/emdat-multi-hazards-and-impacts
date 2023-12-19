@@ -160,11 +160,4 @@ cython_debug/
 #.idea/
 
 # data
-impact_2000_2015.gpkg
-data_indicator.csv
-event_pairs.csv
-impact_exposure_vulnerability_2000_2015.csv
-df_spatially_overlapping_events.csv
-df_res.csv
-impact_2000_2015.csv
-df_impacts.csv
+data/

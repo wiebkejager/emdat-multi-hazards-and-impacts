@@ -4,15 +4,15 @@ import geopandas as gpd
 
 # %% Define constants
 FIRST_YEAR = 2000
-LAST_YEAR = 2015
-EM_DAT_PATH = "C:/Users/wja209/DATA/RAW/EM-DAT/emdat_public_2023_03_31_query_uid-n7b9hv-natural-sisasters.csv"
-GDIS_PATH = "C:/Users/wja209/DATA/RAW/pend-gdis-1960-2018-disasterlocations-gdb/pend-gdis-1960-2018-disasterlocations.gdb"
-GDIS_CSV_PATH = "C:/Users/wja209/DATA/RAW/pend-gdis-1960-2018-disasterlocations-gdb/pend-gdis-1960-2018-disasterlocations.csv"
-PROCESSED_IMPACT_PATH_EXT = "C:/Users/wja209/DATA/PROCESSED/impact_2000_2015_ext.gpkg"
-PROCESSED_IMPACT_PATH = "C:/Users/wja209/DATA/PROCESSED/impact_2000_2015.gpkg"
-PROCESSED_GDIS_PATH = "C:/Users/wja209/DATA/PROCESSED/gdis_2000_2015.gpkg"
-PROCESSED_EMDAT_PATH = "C:/Users/wja209/DATA/PROCESSED/emdat_2000_2015.csv"
-PROCESSED_IMPACT_CSVPATH_EXT = "C:/Users/wja209/DATA/PROCESSED/impact_2000_2015.csv"
+LAST_YEAR = 2018
+EM_DAT_PATH = "data/emdat_public_2023_03_31_query_uid-n7b9hv-natural-sisasters.csv"
+GDIS_PATH = "data/pend-gdis-1960-2018-disasterlocations.gdb"
+GDIS_CSV_PATH = "data/pend-gdis-1960-2018-disasterlocations.csv"
+PROCESSED_EMDAT_PATH = "data/emdat_" + FIRST_YEAR + "_" + LAST_YEAR + ".csv"
+PROCESSED_GDIS_PATH = "data/gdis_" + FIRST_YEAR + "_" + LAST_YEAR + ".gpkg"
+PROCESSED_IMPACT_PATH_EXT = "data/impact_" + FIRST_YEAR + "_" + LAST_YEAR + "_ext.gpkg"
+PROCESSED_IMPACT_PATH = "data/impact_" + FIRST_YEAR + "_" + LAST_YEAR + ".gpkg"
+PROCESSED_IMPACT_CSVPATH_EXT = "data/impact_" + FIRST_YEAR + "_" + LAST_YEAR + ".csv"
 
 # %% Disater to hazard mappings. These are used to select the relevant events in the emdat data set
 disaster_type_to_hazard_map = {
@@ -156,7 +156,20 @@ df_emdat_raw = pd.read_csv(
 
 # Fill missing day values with 1 to enable date conversion when month and year are present. Relevant for droughts and extreme temperature events who are mostly recorded as months &year
 df_emdat_raw["Start Day"].fillna(1, inplace=True)
-df_emdat_raw["End Day"].fillna(28, inplace=True)
+if df_emdat_raw["End Month"] == 2:
+    df_emdat_raw["End Day"].fillna(28, inplace=True)
+elif (
+    (df_emdat_raw["End Month"] == 1)
+    & (df_emdat_raw["End Month"] == 3)
+    & (df_emdat_raw["End Month"] == 5)
+    & (df_emdat_raw["End Month"] == 7)
+    & (df_emdat_raw["End Month"] == 8)
+    & (df_emdat_raw["End Month"] == 10)
+    & (df_emdat_raw["End Month"] == 12)
+):
+    df_emdat_raw["End Day"].fillna(31, inplace=True)
+else:
+    df_emdat_raw["End Day"].fillna(30, inplace=True)
 
 # Convert
 df_emdat_raw["Start Date"] = pd.to_datetime(
@@ -223,35 +236,35 @@ country_iso_mapping = dict(
 df_emdat.to_csv(PROCESSED_EMDAT_PATH, index=False)
 
 
-# # %% Process GDIS file to include relevant time period and hazards and save
-# # Load
-# gdf_gdis_raw = gpd.read_file(GDIS_PATH)
+# %% Process GDIS file to include relevant time period and hazards and save
+# Load
+gdf_gdis_raw = gpd.read_file(GDIS_PATH)
 
-# # %%
-# # Create new ISO variable with filled nans as much as possible
-# gdf_gdis_raw["ISO"] = gdf_gdis_raw["iso3"].fillna(
-#     gdf_gdis_raw["country"].map(country_iso_mapping)
-# )
+# %%
+# Create new ISO variable with filled nans as much as possible
+gdf_gdis_raw["ISO"] = gdf_gdis_raw["iso3"].fillna(
+    gdf_gdis_raw["country"].map(country_iso_mapping)
+)
 
-# # Create new Dis No variable in same format as emdat data set
-# gdf_gdis_raw["Dis No"] = gdf_gdis_raw["disasterno"] + "-" + gdf_gdis_raw["ISO"]
+# Create new Dis No variable in same format as emdat data set
+gdf_gdis_raw["Dis No"] = gdf_gdis_raw["disasterno"] + "-" + gdf_gdis_raw["ISO"]
 
-# # Drop all data that is not in filtered emdat data set
-# gdf_gdis_raw = gdf_gdis_raw[gdf_gdis_raw["Dis No"].isin(df_emdat["Dis No"])][
-#     ["Dis No", "geometry"]
-# ]
+# Drop all data that is not in filtered emdat data set
+gdf_gdis_raw = gdf_gdis_raw[gdf_gdis_raw["Dis No"].isin(df_emdat["Dis No"])][
+    ["Dis No", "geometry"]
+]
 
-# # Aggregate to 1 geometry per disaster event
-# gdf_gdis_2000_2015 = gdf_gdis_raw.dissolve("Dis No")
+# Aggregate to 1 geometry per disaster event
+gdf_gdis_2000_2018 = gdf_gdis_raw.dissolve("Dis No")
 
-# # Save processed gdis file
-# gdf_gdis_2000_2015.to_file(PROCESSED_GDIS_PATH, driver="GPKG")
+# Save processed gdis file
+gdf_gdis_2000_2018.to_file(PROCESSED_GDIS_PATH, driver="GPKG")
 
 # %% Alternatively load processed gdis file
-gdf_gdis_2000_2015 = gpd.read_file(PROCESSED_GDIS_PATH)
+gdf_gdis_2000_2018 = gpd.read_file(PROCESSED_GDIS_PATH)
 
 # %% Merge impact with disaster locations
-gdf_impact = gdf_gdis_2000_2015.merge(right=df_emdat, how="inner", on="Dis No")
+gdf_impact = gdf_gdis_2000_2018.merge(right=df_emdat, how="inner", on="Dis No")
 
 # %% Calculated affected area
 gdf_impact["Affected Area"] = (
