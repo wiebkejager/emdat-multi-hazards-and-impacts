@@ -8,11 +8,26 @@ LAST_YEAR = 2018
 EM_DAT_PATH = "data/emdat_public_2023_03_31_query_uid-n7b9hv-natural-sisasters.csv"
 GDIS_PATH = "data/pend-gdis-1960-2018-disasterlocations.gdb"
 GDIS_CSV_PATH = "data/pend-gdis-1960-2018-disasterlocations.csv"
-PROCESSED_EMDAT_PATH = "data/emdat_" + FIRST_YEAR + "_" + LAST_YEAR + ".csv"
-PROCESSED_GDIS_PATH = "data/gdis_" + FIRST_YEAR + "_" + LAST_YEAR + ".gpkg"
-PROCESSED_IMPACT_PATH_EXT = "data/impact_" + FIRST_YEAR + "_" + LAST_YEAR + "_ext.gpkg"
-PROCESSED_IMPACT_PATH = "data/impact_" + FIRST_YEAR + "_" + LAST_YEAR + ".gpkg"
-PROCESSED_IMPACT_CSVPATH_EXT = "data/impact_" + FIRST_YEAR + "_" + LAST_YEAR + ".csv"
+PROCESSED_EMDAT_PATH = "data/emdat_" + str(FIRST_YEAR) + "_" + str(LAST_YEAR) + ".csv"
+PROCESSED_GDIS_PATH = "data/gdis_" + str(FIRST_YEAR) + "_" + str(LAST_YEAR) + ".gpkg"
+PROCESSED_IMPACT_PATH = (
+    "data/impact_"
+    + str(FIRST_YEAR)
+    + "_"
+    + str(LAST_YEAR)
+    + "_"
+    + str(LAST_YEAR)
+    + ".gpkg"
+)
+PROCESSED_IMPACT_PATH_CSV = (
+    "data/impact_"
+    + str(FIRST_YEAR)
+    + "_"
+    + str(LAST_YEAR)
+    + "_"
+    + str(LAST_YEAR)
+    + ".csv"
+)
 
 # %% Disater to hazard mappings. These are used to select the relevant events in the emdat data set
 disaster_type_to_hazard_map = {
@@ -156,9 +171,8 @@ df_emdat_raw = pd.read_csv(
 
 # Fill missing day values with 1 to enable date conversion when month and year are present. Relevant for droughts and extreme temperature events who are mostly recorded as months &year
 df_emdat_raw["Start Day"].fillna(1, inplace=True)
-if df_emdat_raw["End Month"] == 2:
-    df_emdat_raw["End Day"].fillna(28, inplace=True)
-elif (
+filter_28_days = df_emdat_raw["End Month"] == 2
+filter_31_days = (
     (df_emdat_raw["End Month"] == 1)
     & (df_emdat_raw["End Month"] == 3)
     & (df_emdat_raw["End Month"] == 5)
@@ -166,10 +180,17 @@ elif (
     & (df_emdat_raw["End Month"] == 8)
     & (df_emdat_raw["End Month"] == 10)
     & (df_emdat_raw["End Month"] == 12)
-):
-    df_emdat_raw["End Day"].fillna(31, inplace=True)
-else:
-    df_emdat_raw["End Day"].fillna(30, inplace=True)
+)
+filter_30_days = (
+    (df_emdat_raw["End Month"] == 4)
+    & (df_emdat_raw["End Month"] == 6)
+    & (df_emdat_raw["End Month"] == 9)
+    & (df_emdat_raw["End Month"] == 11)
+)
+
+df_emdat_raw.loc[filter_28_days, "End Day"].fillna(28, inplace=True)
+df_emdat_raw.loc[filter_31_days, "End Day"].fillna(31, inplace=True)
+df_emdat_raw.loc[filter_30_days, "End Day"].fillna(30, inplace=True)
 
 # Convert
 df_emdat_raw["Start Date"] = pd.to_datetime(
@@ -272,10 +293,6 @@ gdf_impact["Affected Area"] = (
 )
 
 # %% Save merged file
-# Save extended version.
-gdf_impact.to_file(PROCESSED_IMPACT_PATH_EXT)
-
-# %%
 # Drop more columns and save short (standard) version
 df_impact_short = gdf_impact.drop(
     columns=["Disaster Type", "Disaster Subtype", "Associated Dis", "Associated Dis2"],
@@ -284,3 +301,6 @@ df_impact_short = gdf_impact.drop(
 
 # %%
 df_impact_short.to_file(PROCESSED_IMPACT_PATH)
+
+# %%
+df_impact_short.to_csv(PROCESSED_IMPACT_PATH_CSV)
