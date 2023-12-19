@@ -95,6 +95,8 @@ df_res = df_spatially_overlapping_events.copy(deep=True)
 
 # %%
 for ix, row in df_res.iterrows():
+    if ix == "2010-0454-GMB":
+        foo = 2
     start_event = gdf_impact.loc[ix]["Start Date"] - temporal_buffer
     end_event = gdf_impact.loc[ix]["End Date"] + temporal_buffer
     overlapping_events = []

@@ -156,7 +156,7 @@ df_emdat_raw = pd.read_csv(
 
 # Fill missing day values with 1 to enable date conversion when month and year are present. Relevant for droughts and extreme temperature events who are mostly recorded as months &year
 df_emdat_raw["Start Day"].fillna(1, inplace=True)
-df_emdat_raw["End Day"].fillna(1, inplace=True)
+df_emdat_raw["End Day"].fillna(28, inplace=True)
 
 # Convert
 df_emdat_raw["Start Date"] = pd.to_datetime(
