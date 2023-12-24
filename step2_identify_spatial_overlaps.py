@@ -5,68 +5,78 @@ import itertools
 import threading
 import datetime
 import json
+from shapely import wkt
 
 # %% Define constants
-START_YEAR = 2000
-END_YEAR = 2015
-PROCESSED_IMPACT_PATH = "impact_2000_2015.gpkg"
-PROCESSED_IMPACT_PATH_CSV = "impact_2000_2015.csv"
+FIRST_YEAR = 2000
+LAST_YEAR = 2018
+PROCESSED_UNIQUE_IMPACT_PATH_CSV = (
+    "data/unique_events_impact_" + str(FIRST_YEAR) + "_" + str(LAST_YEAR) + ".csv"
+)
 
 # %% Load impact data
-gdf_impact = gpd.read_file(PROCESSED_IMPACT_PATH)
-gdf_impact.set_index("Dis No", inplace=True)
+df_impact = pd.read_csv(PROCESSED_UNIQUE_IMPACT_PATH_CSV, sep=";", index_col=0)
 
-# # %%
-# gdf_impact.drop("geometry", axis=1).to_csv(
-#     PROCESSED_IMPACT_PATH_CSV, sep=";", index=True
-# )
+# %%
+df_impact["geometry"] = wkt.loads(df_impact["geometry"])
+gdf_impact = gpd.GeoDataFrame(df_impact, crs="epsg:4326")
+
+
 # %% Create list of indices of all possible event combinations
-# event_indices = gdf_impact.index.values
-# possible_event_combinations = list(itertools.combinations(event_indices, 2))[1:10000]
+event_indices = gdf_impact.index.values
+possible_event_combinations = list(itertools.combinations(event_indices, 2))
 
 
 def check_intersection(
     possible_event_combination: tuple,
     gdf: gpd.GeoDataFrame,
     event_combinations: list,
+    split_events: list,
 ):
     event1 = gdf.loc[[possible_event_combination[0]]]
     event2 = gdf.loc[[possible_event_combination[1]]]
     spatial_overlap = event1.intersection(
         event2, align=False
-    ).is_ring  # intersection without only touches
+    )  # intersection without only touches
     if spatial_overlap.values[0]:
-        event_combinations.append(possible_event_combination)
+        if spatial_overlap.is_ring.values[0]:
+            event_combinations.append(possible_event_combination)
+        else:
+            split_events.append(possible_event_combination)
 
-
-# # %%
-# event_combinations = list()
-# threads = []
-# for possible_event_combination in possible_event_combinations:
-#     thread = threading.Thread(
-#         target=check_intersection(
-#             possible_event_combination, gdf_impact, event_combinations
-#         )
-#     )
-#     threads.append(thread)
-
-# # Start the threads
-# for thread in threads:
-#     thread.start()
-
-# # Ensure all of the threads have finished
-# for thread in threads:
-#     thread.join()
-
-# print(event_combinations)
-
-
-# # %%
-# df = pd.DataFrame(event_combinations, columns=["Event1", "Event2"])
-# # df.to_csv("event_pairs.csv", sep=";", index=False)
 
 # %%
-df = pd.read_csv("event_pairs.csv", sep=";")
+event_combinations = list()
+split_events = list()
+
+threads = []
+for possible_event_combination in possible_event_combinations:
+    thread = threading.Thread(
+        target=check_intersection(
+            possible_event_combination, gdf_impact, event_combinations, split_events
+        )
+    )
+    threads.append(thread)
+
+# Start the threads
+for thread in threads:
+    thread.start()
+
+# Ensure all of the threads have finished
+for thread in threads:
+    thread.join()
+
+
+# %%
+df = pd.DataFrame(event_combinations, columns=["Event1", "Event2"])
+df2 = pd.DataFrame(split_events, columns=["Event1", "Event2"])
+
+df.to_csv("event_pairs.csv", sep=";", index=False)
+df2.to_csv("split_event_pairs.csv", sep=";", index=False)
+
+
+# %%
+# df = pd.read_csv("event_pairs.csv", sep=";")
 event_combinations = list(df.itertuples(index=False, name=None))
 unique_events = list(set(itertools.chain.from_iterable(event_combinations)))
 
@@ -95,8 +105,6 @@ df_res = df_spatially_overlapping_events.copy(deep=True)
 
 # %%
 for ix, row in df_res.iterrows():
-    if ix == "2010-0454-GMB":
-        foo = 2
     start_event = gdf_impact.loc[ix]["Start Date"] - temporal_buffer
     end_event = gdf_impact.loc[ix]["End Date"] + temporal_buffer
     overlapping_events = []

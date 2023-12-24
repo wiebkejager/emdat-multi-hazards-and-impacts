@@ -13,31 +13,13 @@ GDIS_CSV_PATH = "data/pend-gdis-1960-2018-disasterlocations.csv"
 PROCESSED_EMDAT_PATH = "data/emdat_" + str(FIRST_YEAR) + "_" + str(LAST_YEAR) + ".csv"
 PROCESSED_GDIS_PATH = "data/gdis_" + str(FIRST_YEAR) + "_" + str(LAST_YEAR) + ".gpkg"
 PROCESSED_IMPACT_PATH = (
-    "data/impact_"
-    + str(FIRST_YEAR)
-    + "_"
-    + str(LAST_YEAR)
-    + "_"
-    + str(LAST_YEAR)
-    + ".gpkg"
+    "data/impact_" + str(FIRST_YEAR) + "_" + str(LAST_YEAR) + ".gpkg"
 )
 PROCESSED_IMPACT_PATH_CSV = (
-    "data/impact_"
-    + str(FIRST_YEAR)
-    + "_"
-    + str(LAST_YEAR)
-    + "_"
-    + str(LAST_YEAR)
-    + ".csv"
+    "data/impact_" + str(FIRST_YEAR) + "_" + str(LAST_YEAR) + ".csv"
 )
 PROCESSED_UNIQUE_IMPACT_PATH_CSV = (
-    "data/unique_events_impact_"
-    + str(FIRST_YEAR)
-    + "_"
-    + str(LAST_YEAR)
-    + "_"
-    + str(LAST_YEAR)
-    + ".csv"
+    "data/unique_events_impact_" + str(FIRST_YEAR) + "_" + str(LAST_YEAR) + ".csv"
 )
 
 # %% Disater to hazard mappings. These are used to select the relevant events in the emdat data set
@@ -362,11 +344,12 @@ for duplicate_event in duplicate_events:
         wkt.loads(df_impact_short.loc[duplicate_event_filter, "geometry"]),
         crs="epsg:4326",
     )
-    new_geometry = gpd.GeoDataFrame(
-        index=[0], crs="epsg:4326", geometry=[unary_union(gdf_temp)]
-    )
+    new_geometry = unary_union(gdf_temp)
     new_affected_area = (
-        new_geometry.to_crs({"init": "epsg:3857"}).area.values[0] / 10**6
+        gpd.GeoDataFrame(
+            index=[0], crs="epsg:3857", geometry=[new_geometry]
+        ).area.values[0]
+        / 10**6
     )
     new_row = pd.DataFrame(
         [
@@ -397,4 +380,8 @@ for duplicate_event in duplicate_events:
 
 
 # %%
-df_impact_unique.to_csv(PROCESSED_UNIQUE_IMPACT_PATH_CSV, sep=";", index=True)
+df_impact_unique.set_index("Dis No").to_csv(
+    PROCESSED_UNIQUE_IMPACT_PATH_CSV, sep=";", index=True
+)
+
+# %%
