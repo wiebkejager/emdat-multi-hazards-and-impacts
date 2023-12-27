@@ -71,8 +71,8 @@ for thread in threads:
 df = pd.DataFrame(event_combinations, columns=["Event1", "Event2"])
 df2 = pd.DataFrame(split_events, columns=["Event1", "Event2"])
 
-df.to_csv("event_pairs.csv", sep=";", index=False)
-df2.to_csv("split_event_pairs.csv", sep=";", index=False)
+df.to_csv("data/event_pairs.csv", sep=";", index=False)
+df2.to_csv("data/split_event_pairs.csv", sep=";", index=False)
 
 
 # %%
@@ -119,5 +119,5 @@ for ix, row in df_res.iterrows():
     df_res.loc[ix]["Overlapping events"] = json.dumps(overlapping_events)
 
 # %%
-df_res.to_csv("df_res.csv", sep=";", index=True)
+df_res.to_csv("data/df_res.csv", sep=";", index=True)
 # %%
