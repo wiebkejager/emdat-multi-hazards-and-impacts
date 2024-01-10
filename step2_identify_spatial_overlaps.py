@@ -27,6 +27,7 @@ event_indices = gdf_impact.index.values
 possible_event_combinations = list(itertools.combinations(event_indices, 2))
 
 
+# %%
 def check_intersection(
     possible_event_combination: tuple,
     gdf: gpd.GeoDataFrame,
@@ -35,14 +36,18 @@ def check_intersection(
 ):
     event1 = gdf.loc[[possible_event_combination[0]]]
     event2 = gdf.loc[[possible_event_combination[1]]]
-    spatial_overlap = event1.intersection(
-        event2, align=False
-    )  # intersection without only touches
-    if spatial_overlap.values[0]:
-        if spatial_overlap.is_ring.values[0]:
-            event_combinations.append(possible_event_combination)
-        else:
-            split_events.append(possible_event_combination)
+    if event1.overlaps(event2, align=False).values[0]:
+        event_combinations.append(possible_event_combination)
+        return
+    if event1.covers(event2, align=False).values[0]:
+        event_combinations.append(possible_event_combination)
+        return
+    if event1.covered_by(event2, align=False).values[0]:
+        event_combinations.append(possible_event_combination)
+        return
+    if event1.touches(event2, align=False).values[0]:
+        split_events.append(possible_event_combination)
+        return
 
 
 # %%
