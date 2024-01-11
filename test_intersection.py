@@ -99,3 +99,17 @@ print(s.intersection(s4).area > 0)
 print(s.intersection(s5).area > 0)
 
 # %%
+print(s.intersects(s))
+print(s.intersects(s2))
+print(s.intersects(s3))
+print(s.intersects(s4))
+print(s.intersects(s5))
+
+# %%
+print(s.touches(s))
+print(s.touches(s2))
+print(s.touches(s3))
+print(s.touches(s4))
+print(s.touches(s5))
+
+# %%
