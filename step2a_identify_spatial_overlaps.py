@@ -6,6 +6,7 @@ import threading
 import datetime
 import json
 from shapely import wkt
+import time
 
 # %% Define constants
 FIRST_YEAR = 2000
@@ -61,13 +62,17 @@ event_combinations = list()
 split_events = list()
 
 threads = []
+start = time.time()
 for possible_event_combination in possible_event_combinations:
-    thread = threading.Thread(
-        target=check_intersection(
-            possible_event_combination, gdf_impact, event_combinations, split_events
+    try:
+        thread = threading.Thread(
+            target=check_intersection(
+                possible_event_combination, gdf_impact, event_combinations, split_events
+            )
         )
-    )
-    threads.append(thread)
+        threads.append(thread)
+    except Exception as inst:
+        print("Error:" + inst)
 
 # Start the threads
 for thread in threads:
@@ -76,7 +81,8 @@ for thread in threads:
 # Ensure all of the threads have finished
 for thread in threads:
     thread.join()
-
+end = time.time()
+duration = end - start
 
 # %%
 df = pd.DataFrame(event_combinations, columns=["Event1", "Event2"])
@@ -108,27 +114,3 @@ df_spatially_overlapping_events = pd.DataFrame.from_dict(
     dict_spatially_overlapping_events, orient="index", columns=["Overlapping events"]
 )
 df_spatially_overlapping_events.to_csv("df_spatially_overlapping_events.csv", sep=";")
-
-
-# %% temporal overlap
-temporal_buffer = datetime.timedelta(days=30)
-df_res = df_spatially_overlapping_events.copy(deep=True)
-
-# %%
-for ix, row in df_res.iterrows():
-    start_event = gdf_impact.loc[ix]["Start Date"] - temporal_buffer
-    end_event = gdf_impact.loc[ix]["End Date"] + temporal_buffer
-    overlapping_events = []
-    for row_element in json.loads(row["Overlapping events"]):
-        start_ol_event = gdf_impact.loc[row_element]["Start Date"]
-        end_ol_event = gdf_impact.loc[row_element]["End Date"]
-        overlap_criterion = (
-            (start_ol_event >= start_event) & (start_ol_event <= end_event)
-        ) | ((end_ol_event >= start_event) & (end_ol_event <= end_event))
-        if overlap_criterion:
-            overlapping_events.append(row_element)
-    df_res.loc[ix]["Overlapping events"] = json.dumps(overlapping_events)
-
-# %%
-df_res.to_csv("data/df_res.csv", sep=";", index=True)
-# %%
