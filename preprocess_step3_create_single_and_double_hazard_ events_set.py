@@ -2,7 +2,7 @@
 import pandas as pd
 import numpy as np
 import json
-
+import itertools
 
 # %% Constants
 PROCESSED_UNIQUE_IMPACT_PATH_CSV = "data/unique_events_impact_2000_2018.csv"
@@ -45,6 +45,10 @@ cols = [
     "Total Damages 1",
     "Total Damages 2",
     "Total Damages 12",
+    "Number Hazards",
+    "Type Event",
+    "Type Hazards",
+    "Number Types",
 ]
 
 df = pd.DataFrame(
@@ -55,7 +59,77 @@ df = pd.DataFrame(
 for ix, row in df_impact.iterrows():
     # disaster does not have spatial overlap
     if ix not in df_overlapping_events.index:
-        if row["Hazard3"] == "":
+        hazards = [row["Hazard1"], row["Hazard2"], row["Hazard3"]]
+        hazards = [hazard for hazard in hazards if hazard != ""]
+
+        new_row = pd.DataFrame(
+            [
+                [
+                    ix,
+                    np.nan,
+                    row["Hazard1"],
+                    row["Hazard2"],
+                    row["Start Date"],
+                    row["End Date"],
+                    np.nan,
+                    np.nan,
+                    row["Country"],
+                    np.nan,
+                    row["Dis Mag Value"],
+                    np.nan,
+                    np.nan,
+                    np.nan,
+                    np.nan,
+                    np.nan,
+                    np.nan,
+                    np.nan,
+                    np.nan,
+                    np.nan,
+                    np.nan,
+                    3,
+                    "Associated",
+                    hazards,
+                    len(hazards),
+                ]
+            ],
+            columns=cols,
+        )
+
+        # if is single hazard
+        if (row["Hazard2"] == "") & (row["Hazard3"] == ""):
+            new_row["Total Deaths 1"] = row["Total Deaths"]
+            new_row["Total Affected 1"] = row["Total Affected"]
+            new_row["Total Damages 1"] = row["Total Damages, Adjusted ('000 US$')"]
+            new_row["Number Hazards"] = 1
+        # if is double hazard
+        elif row["Hazard3"] == "":
+            new_row["Country 2"] = row["Country"]
+            new_row["Total Deaths 12"] = row["Total Deaths"]
+            new_row["Total Affected 12"] = row["Total Affected"]
+            new_row["Total Damages 12"] = row["Total Damages, Adjusted ('000 US$')"]
+            new_row["Number Hazards"] = 2
+
+        df = pd.concat([df, new_row], ignore_index=True)
+
+    # disaster has spatial overlap:
+    else:
+        disastersi = [ix] + json.loads(
+            df_overlapping_events.loc[ix, "Overlapping events"]
+        )
+        df_tempi = df_impact.loc[disastersi][["Start Date", "End Date"]].sort_values(
+            by="Start Date"
+        )
+        hazards = set(
+            itertools.chain.from_iterable(
+                df_impact.loc[disastersi][
+                    ["Hazard1", "Hazard2", "Hazard3"]
+                ].values.tolist()
+            )
+        )
+        hazards = [hazard for hazard in hazards if hazard != ""]
+
+        # consider only if ix is temporally first of all overlapping hazards
+        if ix == df_tempi.index[0]:
             new_row = pd.DataFrame(
                 [
                     [
@@ -80,96 +154,65 @@ for ix, row in df_impact.iterrows():
                         np.nan,
                         np.nan,
                         np.nan,
+                        len(df_tempi),
+                        "Spatially overlapping",
+                        hazards,
+                        len(hazards),
                     ]
                 ],
                 columns=cols,
             )
-            # and is single hazard
-            if row["Hazard2"] == "":
+
+            # if ix is a single hazard add as Hazard1 to new row and potentially add hazard 2 as well
+            if (row["Hazard2"] == "") & (row["Hazard3"] == ""):
+                disastersi = [ix] + json.loads(
+                    df_overlapping_events.loc[ix, "Overlapping events"]
+                )
+                df_tempi = df_impact.loc[disastersi][
+                    ["Start Date", "End Date"]
+                ].sort_values(by="Start Date")
+
+                new_row["Hazard 1"] = (row["Hazard1"],)
+                new_row["Start Date 1"] = row["Start Date"]
+                new_row["End Date 1"] = row["End Date"]
+                new_row["Country 1"] = row["Country"]
+                new_row["Magnitude 1"] = row["Dis Mag Value"]
                 new_row["Total Deaths 1"] = row["Total Deaths"]
                 new_row["Total Affected 1"] = row["Total Affected"]
                 new_row["Total Damages 1"] = row["Total Damages, Adjusted ('000 US$')"]
-            # and is double hazard
-            else:
-                new_row["Country 2"] = row["Country"]
-                new_row["Total Deaths 12"] = row["Total Deaths"]
-                new_row["Total Affected 12"] = row["Total Affected"]
-                new_row["Total Damages 12"] = row["Total Damages, Adjusted ('000 US$')"]
-            df = pd.concat([df, new_row], ignore_index=True)
-    # disaster has spatial overlap and is single hazard:
-    elif (row["Hazard2"] == "") & (row["Hazard3"] == ""):
-        disastersi = [ix] + json.loads(
-            df_overlapping_events.loc[ix, "Overlapping events"]
-        )
-        df_tempi = df_impact.loc[disastersi][["Start Date", "End Date"]].sort_values(
-            by="Start Date"
-        )
-        # if ix is temporally first of all overlapping hazards -> add to new row as Hazard 1
-        if ix == df_tempi.index[0]:
-            new_row = pd.DataFrame(
-                [
-                    [
-                        ix,
-                        np.nan,
-                        row["Hazard1"],
-                        np.nan,
-                        row["Start Date"],
-                        row["End Date"],
-                        np.nan,
-                        np.nan,
-                        row["Country"],
-                        np.nan,
-                        row["Dis Mag Value"],
-                        np.nan,
-                        row["Total Deaths"],
-                        np.nan,
-                        np.nan,
-                        row["Total Affected"],
-                        np.nan,
-                        np.nan,
-                        row["Total Damages, Adjusted ('000 US$')"],
-                        np.nan,
-                        np.nan,
+
+                # Investigate hazard that is temporally second
+                jx = df_tempi.index[1]
+                # If jx single hazard, add as Hazard 2 to new row
+                if (df_impact.loc[jx, "Hazard2"] == "") & (
+                    df_impact.loc[jx, "Hazard3"] == ""
+                ):
+                    new_row["Dis No 2"] = jx
+                    new_row["Hazard 2"] = df_impact.loc[jx, "Hazard1"]
+                    new_row["Magnitude 2"] = df_impact.loc[jx, "Dis Mag Value"]
+                    new_row["Start Date 2"] = df_impact.loc[jx, "Start Date"]
+                    new_row["End Date 2"] = df_impact.loc[jx, "End Date"]
+                    new_row["Country 2"] = df_impact.loc[jx, "Country"]
+                    new_row["Total Deaths 2"] = df_impact.loc[jx, "Total Deaths"]
+                    new_row["Total Affected 2"] = df_impact.loc[jx, "Total Affected"]
+                    new_row["Total Damages 2"] = df_impact.loc[
+                        jx, "Total Damages, Adjusted ('000 US$')"
                     ]
-                ],
-                columns=cols,
-            )
-            df = pd.concat([df, new_row], ignore_index=True)
+                    new_row["Total Deaths 12"] = (
+                        new_row["Total Deaths 1"] + new_row["Total Deaths 2"]
+                    )
+                    new_row["Total Affected 12"] = (
+                        new_row["Total Affected 1"] + new_row["Total Affected 2"]
+                    )
+                    new_row["Total Damages 12"] = (
+                        new_row["Total Damages 1"] + new_row["Total Damages 2"]
+                    )
 
-            # Investigate hazard that is temporally second
-            jx = df_tempi.index[1]
-            # If jx single hazard, add as Hazard 2 to new row, otherwise do nothing.
-            if (df_impact.loc[jx, "Hazard2"] == "") & (
-                df_impact.loc[jx, "Hazard3"] == ""
-            ):
-                new_row["Dis No 2"] = jx
-                new_row["Hazard 2"] = df_impact.loc[jx, "Hazard1"]
-                new_row["Magnitude 2"] = df_impact.loc[jx, "Dis Mag Value"]
-                new_row["Start Date 2"] = df_impact.loc[jx, "Start Date"]
-                new_row["End Date 2"] = df_impact.loc[jx, "End Date"]
-                new_row["Country 2"] = df_impact.loc[jx, "Country"]
-                new_row["Total Deaths 2"] = df_impact.loc[jx, "Total Deaths"]
-                new_row["Total Affected 2"] = df_impact.loc[jx, "Total Affected"]
-                new_row["Total Damages 2"] = df_impact.loc[
-                    jx, "Total Damages, Adjusted ('000 US$')"
-                ]
-                new_row["Total Deaths 12"] = (
-                    new_row["Total Deaths 1"] + new_row["Total Deaths 2"]
-                )
-                new_row["Total Affected 12"] = (
-                    new_row["Total Affected 1"] + new_row["Total Affected 2"]
-                )
-                new_row["Total Damages 12"] = (
-                    new_row["Total Damages 1"] + new_row["Total Damages 2"]
-                )
+        # Add row to dataframe
+        df = pd.concat([df, new_row], ignore_index=True)
 
-            # Add row to dataframe
-            df = pd.concat([df, new_row], ignore_index=True)
-
-    else:
-        continue
 
 # %%
-df.to_csv("data/df_single_and_pair_impacts.csv", sep=";", index=False)
+df.to_csv("data/df_impacts_of_single_and_pair_events.csv", sep=";", index=False)
 
 # %%
