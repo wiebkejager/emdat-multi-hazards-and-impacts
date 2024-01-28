@@ -1,3 +1,6 @@
+###
+# This file analysis the preprocessed EMDAT data
+
 # %%
 import seaborn as sns
 import pandas as pd
