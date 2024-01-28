@@ -4,10 +4,11 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import missingno as msno
+
 from my_functions import get_bs_sample_df, get_impact_mean
 
 # %% Constants
-PROCESSED_EMDAT_PATH = "C:/Users/wja209/DATA/PROCESSED/emdat_2000_2015.csv"
+PROCESSED_EMDAT_PATH = "data/emdat_2000_2018.csv"
 
 # %%
 df = pd.read_csv(PROCESSED_EMDAT_PATH).set_index("Dis No")
