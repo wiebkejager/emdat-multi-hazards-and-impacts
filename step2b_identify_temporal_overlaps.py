@@ -16,21 +16,25 @@ PROCESSED_UNIQUE_IMPACT_PATH_CSV = (
 df_impact = pd.read_csv(PROCESSED_UNIQUE_IMPACT_PATH_CSV, sep=";", index_col=0)
 
 # %%
+df_impact["Start Date"] = pd.to_datetime(df_impact["Start Date"])
+df_impact["End Date"] = pd.to_datetime(df_impact["End Date"])
+
+# %%
 df_impact["geometry"] = wkt.loads(df_impact["geometry"])
 gdf_impact = gpd.GeoDataFrame(df_impact, crs="epsg:4326")
 
 
 # %% Read data
 df_spatially_overlapping_events = pd.read_csv(
-    "df_spatially_overlapping_events.csv", sep=";"
+    "data/df_spatially_overlapping_events.csv", sep=";", index_col=0
 )
 
 # %% temporal overlap
 temporal_buffer = datetime.timedelta(days=30)
-df_res = df_spatially_overlapping_events.copy(deep=True)
+df_s_t_overlapping_events = df_spatially_overlapping_events.copy(deep=True)
 
 # %%
-for ix, row in df_res.iterrows():
+for ix, row in df_s_t_overlapping_events.iterrows():
     start_event = gdf_impact.loc[ix]["Start Date"] - temporal_buffer
     end_event = gdf_impact.loc[ix]["End Date"] + temporal_buffer
     overlapping_events = []
@@ -42,8 +46,12 @@ for ix, row in df_res.iterrows():
         ) | ((end_ol_event >= start_event) & (end_ol_event <= end_event))
         if overlap_criterion:
             overlapping_events.append(row_element)
-    df_res.loc[ix]["Overlapping events"] = json.dumps(overlapping_events)
+    df_s_t_overlapping_events.loc[ix]["Overlapping events"] = json.dumps(
+        overlapping_events
+    )
 
 # %%
-df_res.to_csv("data/df_res.csv", sep=";", index=True)
+df_s_t_overlapping_events.to_csv(
+    "data/df_s_t_overlapping_events.csv", sep=";", index=True
+)
 # %%

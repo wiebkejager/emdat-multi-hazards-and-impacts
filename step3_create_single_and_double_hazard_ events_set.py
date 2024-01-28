@@ -4,7 +4,7 @@ import numpy as np
 import json
 
 # %%
-PROCESSED_IMPACT_PATH_CSV = "impact_2000_2015.csv"
+PROCESSED_IMPACT_PATH_CSV = "data/impact_2000_2018.csv"
 
 # %%
 df_emdat = pd.read_csv(PROCESSED_IMPACT_PATH_CSV, sep=";").set_index("Dis No")
@@ -15,37 +15,6 @@ df_emdat[["Hazard1", "Hazard2", "Hazard3"]] = df_emdat[
 df_overlaps = pd.read_csv("df_res.csv", sep=";", index_col=0)
 df_overlaps.replace("[]", np.nan, inplace=True)
 df_overlaps.dropna(inplace=True)
-
-# %%
-# Add column indicating event set
-# df_emdat.loc[:, "eventtype_detailed_unsrt"] = df_emdat[
-#     ["Hazard1", "Hazard2", "Hazard3"]
-# ].apply(lambda x: ",".join(list(x.dropna())), axis=1)
-
-# Drop rows with more than 2 Hazards
-# df_emdat = df_emdat.loc[df_emdat.loc[:, "Hazard3"].isna()]
-
-# %%
-
-# for ix, row in df_overlaps.iterrows():
-#     for jx in json.loads(row["Overlapping events"]):
-#         # Check if same event reported across different countries and merge
-#         time_check = (
-#             df_emdat.loc[ix, "Start Date"] == df_emdat.loc[jx, "Start Date"]
-#         ) & (df_emdat.loc[ix, "End Date"] == df_emdat.loc[jx, "End Date"])
-#         hazard_check = df_emdat.loc[ix, "Hazard1"] == df_emdat.loc[ix, "Hazard1"]
-#         if time_check & hazard_check:
-#             foo = 2
-#         else:
-#             print(ix)
-#             print(jx)
-#             foo = 2
-# identify first and second hazard
-# if both single hazards
-
-# df_emdat.loc[ix, :]
-
-# Merge events that are
 
 
 # %%
