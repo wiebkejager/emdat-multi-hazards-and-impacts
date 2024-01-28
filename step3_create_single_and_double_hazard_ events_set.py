@@ -206,6 +206,6 @@ for ix, row in df_impact.iterrows():
         continue
 
 # %%
-df.to_csv("df_single_and_pair_impacts.csv", sep=";", index=False)
+df.to_csv("data/df_single_and_pair_impacts.csv", sep=";", index=False)
 
 # %%
