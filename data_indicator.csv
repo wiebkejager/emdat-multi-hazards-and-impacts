@@ -1,0 +1,16 @@
+event_type;Total Deaths;Total Affected;Total Damages, Adjusted ('000 US$')
+cw;True;False;False
+cw,ew;True;False;True
+dr;False;True;False
+dr,hw;False;False;False
+eq;True;True;False
+eq,ls;True;True;True
+ew;True;True;False
+ew,fl;True;True;True
+ew,fl,ls;True;True;True
+ew,ls;True;True;False
+fl;True;True;False
+fl,ls;True;True;False
+hw;True;False;False
+ls;True;True;False
+vo;False;True;False

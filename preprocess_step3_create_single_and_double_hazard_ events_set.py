@@ -33,7 +33,9 @@ cols = [
     "Start Date 2",
     "End Date 2",
     "Country 1",
+    "Continent 1",
     "Country 2",
+    "Continent 2",
     "Magnitude 1",
     "Magnitude 2",
     "Total Deaths 1",
@@ -60,7 +62,7 @@ for ix, row in df_impact.iterrows():
     # disaster does not have spatial overlap
     if ix not in df_overlapping_events.index:
         hazards = [row["Hazard1"], row["Hazard2"], row["Hazard3"]]
-        hazards = [hazard for hazard in hazards if hazard != ""]
+        hazards = sorted([hazard for hazard in hazards if hazard != ""])
 
         new_row = pd.DataFrame(
             [
@@ -74,6 +76,8 @@ for ix, row in df_impact.iterrows():
                     np.nan,
                     np.nan,
                     row["Country"],
+                    row["Continent"],
+                    np.nan,
                     np.nan,
                     row["Dis Mag Value"],
                     np.nan,
@@ -126,7 +130,7 @@ for ix, row in df_impact.iterrows():
                 ].values.tolist()
             )
         )
-        hazards = [hazard for hazard in hazards if hazard != ""]
+        hazards = sorted([hazard for hazard in hazards if hazard != ""])
 
         # consider only if ix is temporally first of all overlapping hazards
         if ix == df_tempi.index[0]:
@@ -142,6 +146,8 @@ for ix, row in df_impact.iterrows():
                         np.nan,
                         np.nan,
                         row["Country"],
+                        row["Continent"],
+                        np.nan,
                         np.nan,
                         row["Dis Mag Value"],
                         np.nan,
@@ -172,10 +178,6 @@ for ix, row in df_impact.iterrows():
                     ["Start Date", "End Date"]
                 ].sort_values(by="Start Date")
 
-                new_row["Hazard 1"] = (row["Hazard1"],)
-                new_row["Start Date 1"] = row["Start Date"]
-                new_row["End Date 1"] = row["End Date"]
-                new_row["Country 1"] = row["Country"]
                 new_row["Magnitude 1"] = row["Dis Mag Value"]
                 new_row["Total Deaths 1"] = row["Total Deaths"]
                 new_row["Total Affected 1"] = row["Total Affected"]
@@ -193,6 +195,7 @@ for ix, row in df_impact.iterrows():
                     new_row["Start Date 2"] = df_impact.loc[jx, "Start Date"]
                     new_row["End Date 2"] = df_impact.loc[jx, "End Date"]
                     new_row["Country 2"] = df_impact.loc[jx, "Country"]
+                    new_row["Continent 2"] = df_impact.loc[jx, "Continent"]
                     new_row["Total Deaths 2"] = df_impact.loc[jx, "Total Deaths"]
                     new_row["Total Affected 2"] = df_impact.loc[jx, "Total Affected"]
                     new_row["Total Damages 2"] = df_impact.loc[
