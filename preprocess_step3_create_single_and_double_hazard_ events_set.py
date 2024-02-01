@@ -212,8 +212,8 @@ for ix, row in df_impact.iterrows():
                         new_row["Total Damages 1"] + new_row["Total Damages 2"]
                     )
 
-        # Add row to dataframe
-        df = pd.concat([df, new_row], ignore_index=True)
+            # Add row to dataframe
+            df = pd.concat([df, new_row], ignore_index=True)
 
 
 # %%
