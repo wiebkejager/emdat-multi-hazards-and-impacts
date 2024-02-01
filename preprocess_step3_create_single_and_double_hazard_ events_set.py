@@ -123,17 +123,18 @@ for ix, row in df_impact.iterrows():
         df_tempi = df_impact.loc[disastersi][["Start Date", "End Date"]].sort_values(
             by="Start Date"
         )
-        hazards = set(
-            itertools.chain.from_iterable(
-                df_impact.loc[disastersi][
-                    ["Hazard1", "Hazard2", "Hazard3"]
-                ].values.tolist()
-            )
-        )
-        hazards = sorted([hazard for hazard in hazards if hazard != ""])
 
         # consider only if ix is temporally first of all overlapping hazards
         if ix == df_tempi.index[0]:
+            hazards = set(
+                itertools.chain.from_iterable(
+                    df_impact.loc[disastersi][
+                        ["Hazard1", "Hazard2", "Hazard3"]
+                    ].values.tolist()
+                )
+            )
+            hazards = sorted([hazard for hazard in hazards if hazard != ""])
+
             new_row = pd.DataFrame(
                 [
                     [
