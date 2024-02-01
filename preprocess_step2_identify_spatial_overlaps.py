@@ -3,7 +3,6 @@ import geopandas as gpd
 import pandas as pd
 import itertools
 import threading
-import datetime
 import json
 from shapely import wkt
 import time
@@ -37,24 +36,12 @@ def check_intersection(
 ):
     event1 = gdf.loc[[possible_event_combination[0]]]
     event2 = gdf.loc[[possible_event_combination[1]]]
-    if event1.intersects(event2, align=False).values[0]:
-        if event1.touches(event2, align=False).values[0] > 0:
-            split_events.append(possible_event_combination)
-        else:
-            event_pairs.append(possible_event_combination)
-
-    # if event1.overlaps(event2, align=False).values[0]:
-    #     event_pairs.append(possible_event_combination)
-    #     return
-    # if event1.covers(event2, align=False).values[0]:
-    #     event_pairs.append(possible_event_combination)
-    #     return
-    # if event1.covered_by(event2, align=False).values[0]:
-    #     event_pairs.append(possible_event_combination)
-    #     return
-    # if event1.touches(event2, align=False).values[0]:
-    #     split_events.append(possible_event_combination)
-    #     return
+    if event1["ISO"].values[0] == event2["ISO"].values[0]:
+        if event1.intersects(event2, align=False).values[0]:
+            if event1.touches(event2, align=False).values[0] > 0:
+                split_events.append(possible_event_combination)
+            else:
+                event_pairs.append(possible_event_combination)
 
 
 # %%

@@ -307,89 +307,89 @@ df_impact_short.to_file(PROCESSED_IMPACT_PATH)
 df_impact_short.to_csv(PROCESSED_IMPACT_PATH_CSV, sep=";", index=True)
 
 
-# %% Merge events that are the same, but have been split across countries.
+# # %% Merge events that are the same, but have been split across countries.
 
-df_impact_short = pd.read_csv(PROCESSED_IMPACT_PATH_CSV, sep=";", index_col=0)
+# df_impact_short = pd.read_csv(PROCESSED_IMPACT_PATH_CSV, sep=";", index_col=0)
 
-# %%
-df_impact_short[["Dis Event", "Dis ISO"]] = df_impact_short["Dis No"].str.rsplit(
-    pat="-", n=1, expand=True
-)
+# # %%
+# df_impact_short[["Dis Event", "Dis ISO"]] = df_impact_short["Dis No"].str.rsplit(
+#     pat="-", n=1, expand=True
+# )
 
-duplicate_events = (
-    df_impact_short["Dis Event"]
-    .value_counts()[df_impact_short["Dis Event"].value_counts() > 1]
-    .index
-).values
+# duplicate_events = (
+#     df_impact_short["Dis Event"]
+#     .value_counts()[df_impact_short["Dis Event"].value_counts() > 1]
+#     .index
+# ).values
 
-# %%
-# identify split events
-duplicate_events_filter = df_impact_short["Dis Event"].isin(duplicate_events)
-cols = df_impact_short.columns
-# new df with only non-duplicate events
-df_impact_unique = df_impact_short[~duplicate_events_filter]
-cols = df_impact_unique.columns
-
-
-# %%
-# loop through duplicate events
-for duplicate_event in duplicate_events:
-    duplicate_event_filter = df_impact_short["Dis Event"] == duplicate_event
-    new_iso = df_impact_short.loc[duplicate_event_filter, "Dis ISO"].str.cat(sep="-")
-    new_event_dis_no = duplicate_event + "-" + new_iso
-    new_country = df_impact_short.loc[duplicate_event_filter, "Country"].str.cat(
-        sep="-"
-    )
-    new_continent = "-".join(
-        pd.unique(df_impact_short.loc[duplicate_event_filter, "Continent"])
-    )
-    new_deaths = df_impact_short.loc[duplicate_event_filter, "Total Deaths"].sum()
-    new_affected = df_impact_short.loc[duplicate_event_filter, "Total Affected"].sum()
-    new_damages = df_impact_short.loc[
-        duplicate_event_filter, "Total Damages, Adjusted ('000 US$')"
-    ].sum()
-    gdf_temp = gpd.GeoDataFrame(
-        wkt.loads(df_impact_short.loc[duplicate_event_filter, "geometry"]),
-        crs="epsg:4326",
-    )
-    new_geometry = unary_union(gdf_temp)
-    new_affected_area = (
-        gpd.GeoDataFrame(
-            index=[0], crs="epsg:3857", geometry=[new_geometry]
-        ).area.values[0]
-        / 10**6
-    )
-    new_row = pd.DataFrame(
-        [
-            [
-                new_event_dis_no,
-                new_geometry,  # geometry
-                new_country,  # Country
-                new_iso,
-                new_continent,
-                df_impact_short.loc[duplicate_event_filter, "Dis Mag Value"].values[0],
-                df_impact_short.loc[duplicate_event_filter, "Dis Mag Scale"].values[0],
-                new_deaths,
-                new_affected,
-                new_damages,
-                df_impact_short.loc[duplicate_event_filter, "Start Date"].values[0],
-                df_impact_short.loc[duplicate_event_filter, "End Date"].values[0],
-                df_impact_short.loc[duplicate_event_filter, "Hazard1"].values[0],
-                df_impact_short.loc[duplicate_event_filter, "Hazard2"].values[0],
-                df_impact_short.loc[duplicate_event_filter, "Hazard3"].values[0],
-                new_affected_area,
-                duplicate_event,
-                new_iso,
-            ]
-        ],
-        columns=cols,
-    )
-    df_impact_unique = pd.concat([df_impact_unique, new_row], ignore_index=True)
+# # %%
+# # identify split events
+# duplicate_events_filter = df_impact_short["Dis Event"].isin(duplicate_events)
+# cols = df_impact_short.columns
+# # new df with only non-duplicate events
+# df_impact_unique = df_impact_short[~duplicate_events_filter]
+# cols = df_impact_unique.columns
 
 
-# %%
-df_impact_unique.set_index("Dis No").to_csv(
-    PROCESSED_UNIQUE_IMPACT_PATH_CSV, sep=";", index=True
-)
+# # %%
+# # loop through duplicate events
+# for duplicate_event in duplicate_events:
+#     duplicate_event_filter = df_impact_short["Dis Event"] == duplicate_event
+#     new_iso = df_impact_short.loc[duplicate_event_filter, "Dis ISO"].str.cat(sep="-")
+#     new_event_dis_no = duplicate_event + "-" + new_iso
+#     new_country = df_impact_short.loc[duplicate_event_filter, "Country"].str.cat(
+#         sep="-"
+#     )
+#     new_continent = "-".join(
+#         pd.unique(df_impact_short.loc[duplicate_event_filter, "Continent"])
+#     )
+#     new_deaths = df_impact_short.loc[duplicate_event_filter, "Total Deaths"].sum()
+#     new_affected = df_impact_short.loc[duplicate_event_filter, "Total Affected"].sum()
+#     new_damages = df_impact_short.loc[
+#         duplicate_event_filter, "Total Damages, Adjusted ('000 US$')"
+#     ].sum()
+#     gdf_temp = gpd.GeoDataFrame(
+#         wkt.loads(df_impact_short.loc[duplicate_event_filter, "geometry"]),
+#         crs="epsg:4326",
+#     )
+#     new_geometry = unary_union(gdf_temp)
+#     new_affected_area = (
+#         gpd.GeoDataFrame(
+#             index=[0], crs="epsg:3857", geometry=[new_geometry]
+#         ).area.values[0]
+#         / 10**6
+#     )
+#     new_row = pd.DataFrame(
+#         [
+#             [
+#                 new_event_dis_no,
+#                 new_geometry,  # geometry
+#                 new_country,  # Country
+#                 new_iso,
+#                 new_continent,
+#                 df_impact_short.loc[duplicate_event_filter, "Dis Mag Value"].values[0],
+#                 df_impact_short.loc[duplicate_event_filter, "Dis Mag Scale"].values[0],
+#                 new_deaths,
+#                 new_affected,
+#                 new_damages,
+#                 df_impact_short.loc[duplicate_event_filter, "Start Date"].values[0],
+#                 df_impact_short.loc[duplicate_event_filter, "End Date"].values[0],
+#                 df_impact_short.loc[duplicate_event_filter, "Hazard1"].values[0],
+#                 df_impact_short.loc[duplicate_event_filter, "Hazard2"].values[0],
+#                 df_impact_short.loc[duplicate_event_filter, "Hazard3"].values[0],
+#                 new_affected_area,
+#                 duplicate_event,
+#                 new_iso,
+#             ]
+#         ],
+#         columns=cols,
+#     )
+#     df_impact_unique = pd.concat([df_impact_unique, new_row], ignore_index=True)
 
-# %%
+
+# # %%
+# df_impact_unique.set_index("Dis No").to_csv(
+#     PROCESSED_UNIQUE_IMPACT_PATH_CSV, sep=";", index=True
+# )
+
+# # %%

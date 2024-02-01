@@ -16,7 +16,7 @@ df_impact[["Hazard1", "Hazard2", "Hazard3"]] = df_impact[
 
 # %% Load overlapping event list and remove empty entries
 df_overlapping_events = pd.read_csv(
-    "data/df_s_t_overlapping_events.csv", sep=";", index_col=0
+    "data/df_spatially_overlapping_events.csv", sep=";", index_col=0
 )
 df_overlapping_events.replace("[]", np.nan, inplace=True)
 df_overlapping_events.dropna(inplace=True)
@@ -217,6 +217,6 @@ for ix, row in df_impact.iterrows():
 
 
 # %%
-df.to_csv("data/df_impacts_of_single_and_pair_events.csv", sep=";", index=False)
+df.to_csv("data/df_multi_hazard_events.csv", sep=";", index=False)
 
 # %%
