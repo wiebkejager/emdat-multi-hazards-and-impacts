@@ -96,4 +96,6 @@ for event in unique_events:
 df_spatially_overlapping_events = pd.DataFrame.from_dict(
     dict_spatially_overlapping_events, orient="index", columns=["Overlapping events"]
 )
-df_spatially_overlapping_events.to_csv("df_spatially_overlapping_events.csv", sep=";")
+df_spatially_overlapping_events.to_csv(
+    "data/df_spatially_overlapping_events.csv", sep=";"
+)
