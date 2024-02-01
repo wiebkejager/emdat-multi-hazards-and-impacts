@@ -10,12 +10,14 @@ import time
 # %% Define constants
 FIRST_YEAR = 2000
 LAST_YEAR = 2018
-PROCESSED_UNIQUE_IMPACT_PATH_CSV = (
-    "data/unique_events_impact_" + str(FIRST_YEAR) + "_" + str(LAST_YEAR) + ".csv"
+PROCESSED_IMPACT_PATH_CSV = (
+    "data/impact_" + str(FIRST_YEAR) + "_" + str(LAST_YEAR) + ".csv"
 )
 
 # %% Load impact data
-df_impact = pd.read_csv(PROCESSED_UNIQUE_IMPACT_PATH_CSV, sep=";", index_col=0)
+df_impact = pd.read_csv(PROCESSED_IMPACT_PATH_CSV, sep=";", index_col=0).set_index(
+    "Dis No"
+)
 
 # %%
 df_impact["geometry"] = wkt.loads(df_impact["geometry"])
@@ -32,21 +34,17 @@ def check_intersection(
     possible_event_combination: tuple,
     gdf: gpd.GeoDataFrame,
     event_pairs: list,
-    split_events: list,
 ):
     event1 = gdf.loc[[possible_event_combination[0]]]
     event2 = gdf.loc[[possible_event_combination[1]]]
     if event1["ISO"].values[0] == event2["ISO"].values[0]:
         if event1.intersects(event2, align=False).values[0]:
-            if event1.touches(event2, align=False).values[0] > 0:
-                split_events.append(possible_event_combination)
-            else:
+            if not event1.touches(event2, align=False).values[0] > 0:
                 event_pairs.append(possible_event_combination)
 
 
 # %%
 event_pairs = list()
-split_events = list()
 
 threads = []
 start = time.time()
@@ -54,7 +52,7 @@ for possible_event_combination in possible_event_pairs:
     try:
         thread = threading.Thread(
             target=check_intersection(
-                possible_event_combination, gdf_impact, event_pairs, split_events
+                possible_event_combination, gdf_impact, event_pairs
             )
         )
         threads.append(thread)
@@ -73,10 +71,7 @@ duration = end - start
 
 # %%
 df = pd.DataFrame(event_pairs, columns=["Event1", "Event2"])
-df2 = pd.DataFrame(split_events, columns=["Event1", "Event2"])
-
 df.to_csv("data/event_pairs.csv", sep=";", index=False)
-df2.to_csv("data/split_event_pairs.csv", sep=";", index=False)
 
 
 # %%
