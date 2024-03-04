@@ -11,7 +11,7 @@ import missingno as msno
 from my_functions import get_bs_sample_df, get_impact_mean
 
 # %% Constants
-PATH = "data/df_impacts_of_single_and_pair_events.csv"
+PATH = "data/df_compound_consecutive_events.csv"
 
 # %%
 df_all = pd.read_csv(PATH, sep=";")
@@ -49,101 +49,34 @@ df2 = df2.rename(
 )
 df = pd.concat([df1, df2]).reset_index()
 
+
 # Add column indicating event sequence
 df.loc[:, "eventtype_detailed"] = df[["Hazard 1", "Hazard 2"]].apply(
     lambda x: ",".join(sorted(list(x.dropna()))), axis=1
-)  # %%
+)
 
 # %%
-event_counts = df.loc[:, "eventtype_detailed"].value_counts()
-hazards = sorted(event_counts[event_counts >= 20].index)
-# drop triple hazards. we only compare pairs
-hazard_pairs = [item for item in hazards if len(item) < 6 and len(item) > 2]
-
-# %%
-# %% Compare mean damages: I.e. if and only if Z = X + Y than E(Z) = E(X) + E(Y)
-iterables = [
-    ["Total Damages", "Total Affected", "Total Deaths"],
-    ["whole", "sum", "whole/sum"],
-]
-index = pd.MultiIndex.from_product(iterables, names=["first", "second"])
-df_res = pd.DataFrame(index=index, columns=hazard_pairs)
-
-for hazard_pair in hazard_pairs:
-    ## Damages
-    # pairs
-    df_res.loc[index[0], hazard_pair] = df.loc[
-        df.loc[:, "eventtype_detailed"] == hazard_pair, index[0][0]
-    ].mean()
-    # sum
-    [haz1, haz2] = hazard_pair.split(",")
-    df_res.loc[index[1], hazard_pair] = (
-        df.loc[df.loc[:, "eventtype_detailed"] == haz1, index[0][0]].mean()
-        + df.loc[df.loc[:, "eventtype_detailed"] == haz2, index[0][0]].mean()
-    )
-    # sum/pairs
-    df_res.loc[index[2], hazard_pair] = (
-        df_res.loc[index[0], hazard_pair] / df_res.loc[index[1], hazard_pair]
-    )
-    ## Affected
-    # pairs
-    df_res.loc[index[3], hazard_pair] = df.loc[
-        df.loc[:, "eventtype_detailed"] == hazard_pair, index[3][0]
-    ].mean()
-    # sum
-    [haz1, haz2] = hazard_pair.split(",")
-    df_res.loc[index[4], hazard_pair] = (
-        df.loc[df.loc[:, "eventtype_detailed"] == haz1, index[3][0]].mean()
-        + df.loc[df.loc[:, "eventtype_detailed"] == haz2, index[3][0]].mean()
-    )
-    # sum/pairs
-    df_res.loc[index[5], hazard_pair] = (
-        df_res.loc[index[3], hazard_pair] / df_res.loc[index[4], hazard_pair]
-    )
-
-    ## Deaths
-    # pairs
-    df_res.loc[index[6], hazard_pair] = df.loc[
-        df.loc[:, "eventtype_detailed"] == hazard_pair, index[6][0]
-    ].mean()
-    # sum
-    [haz1, haz2] = hazard_pair.split(",")
-    df_res.loc[index[7], hazard_pair] = (
-        df.loc[df.loc[:, "eventtype_detailed"] == haz1, index[6][0]].mean()
-        + df.loc[df.loc[:, "eventtype_detailed"] == haz2, index[6][0]].mean()
-    )
-    # sum/pairs
-    df_res.loc[index[8], hazard_pair] = (
-        df_res.loc[index[6], hazard_pair] / df_res.loc[index[7], hazard_pair]
-    )
-
-df_res = df_res.astype("float64").round(1)
-df_res.to_csv("data/sum_and_whole_damages.csv", sep=";")
-
-
-# %%
-
 fig, axs = plt.subplots(
+    4,
     3,
-    3,
-    figsize=(12, 12),
+    figsize=(12, 16),
     # width_ratios=[3, 3, 3],
 )
 hazard_groups = [
-    ["eq", "ls", "eq,ls"],
-    ["eq", "ls", "eq,ls"],
-    ["eq", "ls", "eq,ls"],
     ["ew", "fl", "ew,fl"],
     ["ew", "fl", "ew,fl"],
     ["ew", "fl", "ew,fl"],
     ["fl", "ls", "fl,ls"],
     ["fl", "ls", "fl,ls"],
     ["fl", "ls", "fl,ls"],
+    ["fl", "fl", "fl,fl"],
+    ["fl", "fl", "fl,fl"],
+    ["fl", "fl", "fl,fl"],
+    ["eq", "ls", "eq,ls"],
+    ["eq", "ls", "eq,ls"],
+    ["eq", "ls", "eq,ls"],
 ]
 impacts = [
-    "Total Damages",
-    "Total Affected",
-    "Total Deaths",
     "Total Damages",
     "Total Affected",
     "Total Deaths",
@@ -174,11 +107,11 @@ for ax in axs.reshape(-1):
         ax=ax,
         order=hazard_group,
         showfliers=False,
-        showmeans=False,
+        showmeans=True,
         meanprops={
             # "marker": "s",
-            "markerfacecolor": "black",
-            "markeredgecolor": "black",
+            "markerfacecolor": "red",
+            "markeredgecolor": "red",
         },
     ).set(xlabel="Hazard Type")
     # ax.semilogy(base=2)
@@ -188,17 +121,95 @@ for ax in axs.reshape(-1):
 fig.tight_layout()
 
 # %%
-df_res_factor = (
-    df_res.loc[(slice(None), "whole/sum"), :]
-    .reset_index()
-    .melt(id_vars=["first", "second"], var_name="event_type", value_name="factor")
-    .drop("second", axis=1)
-    .rename({"first": "impact_type"}, axis=1)
+df_means = (
+    df[["Total Damages", "Total Affected", "Total Deaths", "eventtype_detailed"]]
+    .groupby(["eventtype_detailed"])
+    .mean()
 )
+
+df_means.loc[
+    ["ew", "fl", "ls", "eq", "fl,ls", "ew,fl", "fl,fl", "eq,ls"]
+].round().to_csv("data/sum_and_whole_damages.csv", sep=";")
+
+
+# %%
+# event_counts = df.loc[:, ["eventtype_detailed"]].value_counts()
+# event_counts.reset_index().plot.bar(rot=45, stacked=True)
+# hazards = sorted(event_counts[event_counts >= 25].index)
+
+
+hazard_pairs = ["fl,ls", "ew,fl", "fl,fl", "eq,ls"]
+
+
+# # %% Compare mean damages: I.e. if and only if Z = X + Y than E(Z) = E(X) + E(Y)
+# iterables = [
+#     ["Total Damages", "Total Affected", "Total Deaths"],
+#     ["whole", "sum", "whole/sum"],
+# ]
+# index = pd.MultiIndex.from_product(iterables, names=["first", "second"])
+# df_res = pd.DataFrame(index=index, columns=hazard_pairs)
+
+# for hazard_pair in hazard_pairs:
+#     ## Damages
+#     # pairs
+#     df_res.loc[index[0], hazard_pair] = df.loc[
+#         df.loc[:, "eventtype_detailed"] == hazard_pair, index[0][0]
+#     ].mean()
+#     # sum
+#     [haz1, haz2] = hazard_pair.split(",")
+#     df_res.loc[index[1], hazard_pair] = (
+#         df.loc[df.loc[:, "eventtype_detailed"] == haz1, index[0][0]].mean()
+#         + df.loc[df.loc[:, "eventtype_detailed"] == haz2, index[0][0]].mean()
+#     )
+#     # sum/pairs
+#     df_res.loc[index[2], hazard_pair] = (
+#         df_res.loc[index[0], hazard_pair] / df_res.loc[index[1], hazard_pair]
+#     )
+#     ## Affected
+#     # pairs
+#     df_res.loc[index[3], hazard_pair] = df.loc[
+#         df.loc[:, "eventtype_detailed"] == hazard_pair, index[3][0]
+#     ].mean()
+#     # sum
+#     [haz1, haz2] = hazard_pair.split(",")
+#     df_res.loc[index[4], hazard_pair] = (
+#         df.loc[df.loc[:, "eventtype_detailed"] == haz1, index[3][0]].mean()
+#         + df.loc[df.loc[:, "eventtype_detailed"] == haz2, index[3][0]].mean()
+#     )
+#     # sum/pairs
+#     df_res.loc[index[5], hazard_pair] = (
+#         df_res.loc[index[3], hazard_pair] / df_res.loc[index[4], hazard_pair]
+#     )
+
+#     ## Deaths
+#     # pairs
+#     df_res.loc[index[6], hazard_pair] = df.loc[
+#         df.loc[:, "eventtype_detailed"] == hazard_pair, index[6][0]
+#     ].mean()
+#     # sum
+#     [haz1, haz2] = hazard_pair.split(",")
+#     df_res.loc[index[7], hazard_pair] = (
+#         df.loc[df.loc[:, "eventtype_detailed"] == haz1, index[6][0]].mean()
+#         + df.loc[df.loc[:, "eventtype_detailed"] == haz2, index[6][0]].mean()
+#     )
+#     # sum/pairs
+#     df_res.loc[index[8], hazard_pair] = (
+#         df_res.loc[index[6], hazard_pair] / df_res.loc[index[7], hazard_pair]
+#     )
+
+# df_res = df_res.astype("float64").round(1)
+# df_res.to_csv("data/sum_and_whole_damages.csv", sep=";")
 
 
 # %% Bootstrap distribution mean damages: I.e. if and only if Z = X + Y than E(Z) = E(X) + E(Y)
-cols = ["sample_id", "event_type", "impact_type", "factor"]
+cols = [
+    "sample_id",
+    "event_type",
+    "Total Damages",
+    "Total Affected",
+    "Total Deaths",
+    "wholesum",
+]
 df_bs = pd.DataFrame(
     columns=cols,
 )
@@ -214,59 +225,151 @@ for hazard_pair in hazard_pairs:
         df_bs_haz2 = get_bs_sample_df(df, haz2)
         df_bs_haz12 = get_bs_sample_df(df, hazard_pair)
 
-        for impact_var in impact_vars:
-            factor = get_impact_mean(df_bs_haz12, impact_var) / (
-                get_impact_mean(df_bs_haz1, impact_var)
-                + get_impact_mean(df_bs_haz2, impact_var)
-            )
-            new_row = pd.DataFrame([[n, hazard_pair, impact_var, factor]], columns=cols)
-            df_bs = pd.concat([df_bs, new_row], ignore_index=True)
+        whole_damages = get_impact_mean(df_bs_haz12, "Total Damages")
+        haz1_damages = get_impact_mean(df_bs_haz1, "Total Damages")
+        haz2_damages = get_impact_mean(df_bs_haz2, "Total Damages")
+        sum_damages = haz1_damages + haz2_damages
 
-        n = n + 1
+        whole_affected = get_impact_mean(df_bs_haz12, "Total Affected")
+        haz1_affected = get_impact_mean(df_bs_haz1, "Total Affected")
+        haz2_affected = get_impact_mean(df_bs_haz2, "Total Affected")
+        sum_affected = haz1_affected + haz2_affected
+
+        whole_deaths = get_impact_mean(df_bs_haz12, "Total Deaths")
+        haz1_deaths = get_impact_mean(df_bs_haz1, "Total Deaths")
+        haz2_deaths = get_impact_mean(df_bs_haz2, "Total Deaths")
+        sum_deaths = haz1_deaths + haz2_deaths
+
+        new_row1 = pd.DataFrame(
+            [
+                [
+                    n,
+                    hazard_pair,
+                    whole_damages,
+                    whole_affected,
+                    whole_deaths,
+                    "Whole",
+                ]
+            ],
+            columns=cols,
+        )
+        new_row2 = pd.DataFrame(
+            [
+                [
+                    n,
+                    hazard_pair,
+                    sum_damages,
+                    sum_affected,
+                    sum_deaths,
+                    "Sum",
+                ]
+            ],
+            columns=cols,
+        )
+        new_row3 = pd.DataFrame(
+            [
+                [
+                    n,
+                    hazard_pair,
+                    haz1_damages,
+                    haz1_affected,
+                    haz1_deaths,
+                    "Haz1",
+                ]
+            ],
+            columns=cols,
+        )
+        new_row4 = pd.DataFrame(
+            [
+                [
+                    n,
+                    hazard_pair,
+                    haz2_damages,
+                    haz2_affected,
+                    haz2_deaths,
+                    "Haz2",
+                ]
+            ],
+            columns=cols,
+        )
+
+        df_bs = pd.concat([df_bs, new_row3], ignore_index=True)
+        df_bs = pd.concat([df_bs, new_row4], ignore_index=True)
+        df_bs = pd.concat([df_bs, new_row2], ignore_index=True)
+        df_bs = pd.concat([df_bs, new_row1], ignore_index=True)
+
+    n = n + 1
+
 
 # %%
-fig, ax = plt.subplots(1, 1, figsize=(8, 6))
-# ax = sns.boxplot(
-#     x="event_type",
-#     y="factor",
-#     data=df_bs,
-#     hue="impact_type",
-#     showfliers=False,
-#     whis=(2.5, 97.5),
-# )
+fig, axs = plt.subplots(4, 3, figsize=(12, 12))
 
-ax = sns.pointplot(
-    x="event_type",
-    y="factor",
-    hue="impact_type",
-    data=df_bs,
-    dodge=0.2,
-    join=False,
-    errorbar=("pi", 95),
-    markers="|",
-    legend=False,
-)
+impacts = [
+    "Total Damages",
+    "Total Affected",
+    "Total Deaths",
+    "Total Damages",
+    "Total Affected",
+    "Total Deaths",
+    "Total Damages",
+    "Total Affected",
+    "Total Deaths",
+    "Total Damages",
+    "Total Affected",
+    "Total Deaths",
+    "Total Damages",
+    "Total Affected",
+    "Total Deaths",
+]
 
+i = -1
+for ax in axs.reshape(-1):
+    i = i + 1
+    hazard_group = hazard_groups[i]
+    hazard_filter = df_bs.loc[:, "event_type"].isin(hazard_group)
 
-plt.yscale("log")
-ax.axhline(1, 0, 1, color="black")
-ax = sns.pointplot(
-    x="event_type",
-    y="factor",
-    hue="impact_type",
-    data=df_res_factor,
-    dodge=0.2,
-    errorbar=("pi", 0),
-    join=False,
-)
-sns.move_legend(
-    ax,
-    "lower center",
-    bbox_to_anchor=(0.5, 1),
-    ncol=3,
-    title=None,
-    frameon=False,
-)
+    # sns.boxplot(
+    #     ax=ax,
+    #     x="event_type",
+    #     y=impacts[i],
+    #     hue="wholesum",
+    #     data=df_bs[hazard_filter],
+    #     showfliers=False,
+    # )
+    sns.pointplot(
+        ax=ax,
+        x="event_type",
+        y=impacts[i],
+        hue="wholesum",
+        data=df_bs[hazard_filter],
+        dodge=0.2,
+        join=False,
+        errorbar=("pi", 95),
+        markers="|",
+        legend=False,
+    )
 
-ax.yaxis.grid(True)  # Hide the horizontal gridlines
+    sns.pointplot(
+        ax=ax,
+        x="event_type",
+        y=impacts[i],
+        hue="wholesum",
+        data=df_bs[hazard_filter],
+        dodge=0.2,
+        errorbar=("pi", 0),
+        join=False,
+    )
+
+    sns.move_legend(
+        ax,
+        "lower center",
+        bbox_to_anchor=(0.5, 1),
+        ncol=3,
+        title=None,
+        frameon=False,
+    )
+
+    ax.yaxis.grid(True)  # Hide the horizontal gridlines
 fig.tight_layout()
+
+# %%

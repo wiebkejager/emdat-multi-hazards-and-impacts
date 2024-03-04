@@ -30,8 +30,17 @@ df.loc[:, "eventtype_detailed_unsrt"] = df[["Hazard1", "Hazard2", "Hazard3"]].ap
 )
 
 # %% Filter out event types that occurr little
-event_counts = df.loc[:, "eventtype_detailed"].value_counts()
-hazards = sorted(event_counts[event_counts >= 20].index)
+event_counts = df.loc[:, ["eventtype_detailed", "Continent"]].value_counts()
+
+# hazards = sorted(event_counts[event_counts >= 20].index)
+
+
+# %%
+foo = event_counts.reset_index().pivot_table(
+    "count", ["eventtype_detailed"], "Continent"
+)
+foo.plot.bar(stacked=True)
+
 
 # %% Show count of events
 fig, (ax1, ax2) = plt.subplots(1, 2, width_ratios=[1, 9])
@@ -131,8 +140,8 @@ data_indicator.reset_index().rename({"index": "event_type"}, axis=1).to_csv(
 )
 
 # %%
-impact_var = "Total Damages, Adjusted ('000 US$')"
-# impact_var = "Total Affected"
+# impact_var = "Total Damages, Adjusted ('000 US$')"
+impact_var = "Total Affected"
 # impact_var = "Total Deaths"
 
 # %%
@@ -165,6 +174,8 @@ ax1.set_title(impact_var)
 ax2 = data2.plot.bar(rot=45, stacked=True)
 ax2.set_title(impact_var)
 
+data1["Percentage"] = data1["Available"] / (data1["Missing"] + data1["Available"])
+
 # %%
 indices = hazards
 data1 = pd.DataFrame(
@@ -194,6 +205,7 @@ ax1.set_title(impact_var)
 
 ax2 = data2.plot.bar(rot=45, stacked=True)
 ax2.set_title(impact_var)
+
 
 # %%
 indices = df.index.str[0:4].unique()

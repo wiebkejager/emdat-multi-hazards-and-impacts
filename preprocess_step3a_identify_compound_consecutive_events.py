@@ -42,8 +42,10 @@ for ix, row in df_s_t_overlapping_events.iterrows():
         overlapping_events
     )
 
+
 # %%
 df_s_t_overlapping_events.replace("[]", np.nan, inplace=True)
+df_s_t_overlapping_events.to_csv("data/df_s_t_overlapping_events.csv", sep=";")
 df_s_t_overlapping_events.dropna(inplace=True)
 
 # %%
@@ -159,7 +161,7 @@ for ix, row in df_impact.iterrows():
 
         df = pd.concat([df, new_row], ignore_index=True)
 
-    # disaster has spatial overlap:
+    # disaster has spatial and temporal overlap:
     else:
         disastersi = [ix] + json.loads(
             df_s_t_overlapping_events.loc[ix, "Overlapping events"]
@@ -192,7 +194,7 @@ for ix, row in df_impact.iterrows():
             new_row["Total Affected 1"] = row["Total Affected"]
             new_row["Total Damages 1"] = row["Total Damages, Adjusted ('000 US$')"]
             new_row["Number Hazards"] = len(df_tempi)
-            new_row["Type Event"] = "Single"
+            new_row["Type Event"] = "First"
             new_row["Type Hazards"] = ", ".join(hazards)
             new_row["Number Types"] = len(hazards)
 
@@ -229,8 +231,6 @@ for ix, row in df_impact.iterrows():
                 )
                 hazards = sorted([hazard for hazard in hazards if hazard != ""])
 
-                event_type = "Consecutive"
-
                 new_row = create_new_row()
                 new_row["Dis No 1"] = jx
                 new_row["Dis No 2"] = ix
@@ -243,11 +243,11 @@ for ix, row in df_impact.iterrows():
                 new_row["Country 1"] = df_impact.loc[jx, "Country"]
                 new_row["Continent 1"] = df_impact.loc[jx, "Continent"]
                 new_row["Dis Mag Value 1"] = df_impact.loc[jx, "Dis Mag Value"]
-                # new_row["Total Deaths 1"] = df_impact.loc[jx, "Total Deaths"]
-                # new_row["Total Affected 1"] = df_impact.loc[jx, "Total Affected"]
-                # new_row["Total Damages 1"] = df_impact.loc[
-                #     jx, "Total Damages, Adjusted ('000 US$')"
-                # ]
+                new_row["Total Deaths 1"] = df_impact.loc[jx, "Total Deaths"]
+                new_row["Total Affected 1"] = df_impact.loc[jx, "Total Affected"]
+                new_row["Total Damages 1"] = df_impact.loc[
+                    jx, "Total Damages, Adjusted ('000 US$')"
+                ]
                 new_row["Country 2"] = row["Country"]
                 new_row["Continent 2"] = row["Continent"]
                 new_row["Dis Mag Value 2"] = row["Dis Mag Value"]
@@ -255,7 +255,7 @@ for ix, row in df_impact.iterrows():
                 new_row["Total Affected 2"] = row["Total Affected"]
                 new_row["Total Damages 2"] = row["Total Damages, Adjusted ('000 US$')"]
                 new_row["Number Hazards"] = len(df_tempi)
-                new_row["Type Event"] = event_type
+                new_row["Type Event"] = "Consecutive"
                 new_row["Type Hazards"] = ", ".join(hazards)
                 new_row["Number Types"] = len(hazards)
 
@@ -273,6 +273,13 @@ for ix, row in df_impact.iterrows():
                 # Add row to dataframe
                 df = pd.concat([df, new_row], ignore_index=True)
 
+# %%
+# Remove duplicates!
+df = df.sort_values("Type Event", ascending=True).drop_duplicates("Dis No 1")
+
+df.loc[df["Type Event"] == "First", "Type Event"] = "Consecutive"
 
 # %%
-df.to_csv("data/df_multi_hazard_events.csv", sep=";", index=False)
+df.to_csv("data/df_compound_consecutive_events.csv", sep=";", index=False)
+
+# %%
