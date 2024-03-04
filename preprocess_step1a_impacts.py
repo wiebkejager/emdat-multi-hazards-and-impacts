@@ -271,6 +271,7 @@ gdf_gdis_raw["ISO"] = gdf_gdis_raw["iso3"].fillna(
 # Create new Dis No variable in same format as emdat data set
 gdf_gdis_raw["Dis No"] = gdf_gdis_raw["disasterno"] + "-" + gdf_gdis_raw["ISO"]
 
+# %%
 # Drop all data that is not in filtered emdat data set
 gdf_gdis_raw = gdf_gdis_raw[gdf_gdis_raw["Dis No"].isin(df_emdat["Dis No"])][
     ["Dis No", "geometry"]
@@ -278,6 +279,7 @@ gdf_gdis_raw = gdf_gdis_raw[gdf_gdis_raw["Dis No"].isin(df_emdat["Dis No"])][
 
 # Aggregate to 1 geometry per disaster event
 gdf_gdis_2000_2018 = gdf_gdis_raw.dissolve("Dis No")
+gdf_gdis_2000_2018_dis_no = gdf_gdis_raw["Dis No"].unique()
 
 # Save processed gdis file
 gdf_gdis_2000_2018.to_file(PROCESSED_GDIS_PATH, driver="GPKG")
