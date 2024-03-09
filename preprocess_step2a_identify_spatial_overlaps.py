@@ -63,7 +63,7 @@ event_pairs = list()
 
 threads = []
 start = time.time()
-for possible_event_combination in possible_event_pairs[1:10]:
+for possible_event_combination in possible_event_pairs:
     try:
         thread = threading.Thread(
             target=check_intersection(
@@ -89,4 +89,4 @@ df = pd.DataFrame(
     event_pairs,
     columns=["Event1", "Event2", "Area_intersection", "Percent1", "Percent2"],
 )
-df.to_csv("data/event_pairs_percent.csv", sep=";", index=False)
+df.to_csv("data/event_pairs.csv", sep=";", index=False)

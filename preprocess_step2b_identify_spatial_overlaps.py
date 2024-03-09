@@ -1,19 +1,24 @@
 # %% Imports
-import geopandas as gpd
 import pandas as pd
 import itertools
-import threading
 import json
-from shapely import wkt
-import time
-import numpy as np
 
 
 # %%
 df = pd.read_csv("data/event_pairs.csv", sep=";")
-event_pairs = list(df.itertuples(index=False, name=None))
+
+
+# %%
+min_overlap_thres = 0.4
+thres_filter = (df["Percent1"] > min_overlap_thres) & (
+    df["Percent2"] > min_overlap_thres
+)
+
+event_pairs = list(df.loc[:, ["Event1", "Event2"]].itertuples(index=False, name=None))
 unique_events = list(set(itertools.chain.from_iterable(event_pairs)))
-threshold = 0.5
+event_pairs = list(
+    df.loc[thres_filter, ["Event1", "Event2"]].itertuples(index=False, name=None)
+)
 
 # %%
 dict_spatially_overlapping_events = (
@@ -24,7 +29,8 @@ for event in unique_events:
     overlapping_events = set(
         itertools.chain.from_iterable((itertools.compress(event_pairs, filter_event)))
     )
-    overlapping_events.remove(event)
+    if overlapping_events:
+        overlapping_events.remove(event)
     dict_spatially_overlapping_events[event] = json.dumps(list(overlapping_events))
 
 
@@ -32,6 +38,10 @@ for event in unique_events:
 df_spatially_overlapping_events = pd.DataFrame.from_dict(
     dict_spatially_overlapping_events, orient="index", columns=["Overlapping events"]
 )
+
+# %%
 df_spatially_overlapping_events.to_csv(
-    "data/df_spatially_overlapping_events_10percent.csv", sep=";"
+    "data/df_spatially_overlapping_events_.csv", sep=";"
 )
+
+# %%
