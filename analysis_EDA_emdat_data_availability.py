@@ -10,12 +10,12 @@ import matplotlib.pyplot as plt
 import missingno as msno
 
 # %% Constants
-# PROCESSED_EMDAT_PATH = "data/emdat_2000_2018.csv"
-PROCESSED_IMPACT_PATH = "data/impact_2000_2018.csv"
+PROCESSED_EMDAT_PATH = "data/emdat_2000_2018.csv"
+# PROCESSED_IMPACT_PATH = "data/impact_2000_2018.csv"
 
 # %%
-# df = pd.read_csv(PROCESSED_EMDAT_PATH, sep=";", index_col=0)
-df = pd.read_csv(PROCESSED_IMPACT_PATH, sep=";", index_col=0)
+df = pd.read_csv(PROCESSED_EMDAT_PATH).set_index("Dis No")
+# df = pd.read_csv(PROCESSED_IMPACT_PATH, sep=";", index_col=0)
 
 
 # %% Add column indicating single-hazard or multi-hazard
@@ -82,6 +82,7 @@ cols = [
     "Total Deaths",
     "Total Affected",
     "Total Damages, Adjusted ('000 US$')",
+    "geom",
 ]
 data = pd.DataFrame(
     index=indices,
@@ -130,42 +131,43 @@ data.to_csv("available_data.csv", sep=";")
 #     "data_indicator.csv", sep=";", index=False
 # )
 
-# # %%
-# # impact_var = "Total Damages, Adjusted ('000 US$')"
+# %%
+# impact_var = "Total Damages, Adjusted ('000 US$')"
 # impact_var = "Total Affected"
-# # impact_var = "Total Deaths"
+# impact_var = "Total Deaths"
+impact_var = "geom"
 
-# # %%
-# indices = list(df["Continent"].unique())
-# data1 = pd.DataFrame(
-#     index=indices,
-#     columns=["Missing", "Available"],
-# )
-# data2 = pd.DataFrame(
-#     index=indices,
-#     columns=["Missing", "Available"],
-# )
+# %%
+indices = list(df["Continent"].unique())
+data1 = pd.DataFrame(
+    index=indices,
+    columns=["Missing", "Available"],
+)
+data2 = pd.DataFrame(
+    index=indices,
+    columns=["Missing", "Available"],
+)
 
-# for index in indices:
-#     filter = df["Continent"] == index
-#     data1.loc[index, "Missing"] = (
-#         df.loc[filter, impact_var].isna().sum()  # / filter.sum()
-#     )
-#     data1.loc[index, "Available"] = (
-#         ~df.loc[filter, impact_var].isna()
-#     ).sum()  # / filter.sum()
-#     data2.loc[index, "Missing"] = df.loc[filter, impact_var].isna().sum() / filter.sum()
-#     data2.loc[index, "Available"] = (
-#         ~df.loc[filter, impact_var].isna()
-#     ).sum() / filter.sum()
+for index in indices:
+    filter = df["Continent"] == index
+    data1.loc[index, "Missing"] = (
+        df.loc[filter, impact_var].isna().sum()  # / filter.sum()
+    )
+    data1.loc[index, "Available"] = (
+        ~df.loc[filter, impact_var].isna()
+    ).sum()  # / filter.sum()
+    data2.loc[index, "Missing"] = df.loc[filter, impact_var].isna().sum() / filter.sum()
+    data2.loc[index, "Available"] = (
+        ~df.loc[filter, impact_var].isna()
+    ).sum() / filter.sum()
 
-# ax1 = data1.plot.bar(rot=45, stacked=True)
-# ax1.set_title(impact_var)
+ax1 = data1.plot.bar(rot=45, stacked=True)
+ax1.set_title(impact_var)
 
-# ax2 = data2.plot.bar(rot=45, stacked=True)
-# ax2.set_title(impact_var)
+ax2 = data2.plot.bar(rot=45, stacked=True)
+ax2.set_title(impact_var)
 
-# data1["Percentage"] = data1["Available"] / (data1["Missing"] + data1["Available"])
+data1["Percentage"] = data1["Available"] / (data1["Missing"] + data1["Available"])
 
 # # %%
 # indices = hazards
@@ -198,36 +200,36 @@ data.to_csv("available_data.csv", sep=";")
 # ax2.set_title(impact_var)
 
 
-# # %%
-# indices = df.index.str[0:4].unique()
-# data1 = pd.DataFrame(
-#     index=indices,
-#     columns=["Missing", "Available"],
-# )
-# data2 = pd.DataFrame(
-#     index=indices,
-#     columns=["Missing", "Available"],
-# )
+# %%
+indices = df.index.str[0:4].unique()
+data1 = pd.DataFrame(
+    index=indices,
+    columns=["Missing", "Available"],
+)
+data2 = pd.DataFrame(
+    index=indices,
+    columns=["Missing", "Available"],
+)
 
 
-# for index in indices:
-#     filter = df.index.str[0:4] == index
-#     data1.loc[index, "Missing"] = (
-#         df.loc[filter, impact_var].isna().sum()  # / filter.sum()
-#     )
-#     data1.loc[index, "Available"] = (
-#         ~df.loc[filter, impact_var].isna()
-#     ).sum()  # / filter.sum()
-#     data2.loc[index, "Missing"] = df.loc[filter, impact_var].isna().sum() / filter.sum()
-#     data2.loc[index, "Available"] = (
-#         ~df.loc[filter, impact_var].isna()
-#     ).sum() / filter.sum()
+for index in indices:
+    filter = df.index.str[0:4] == index
+    data1.loc[index, "Missing"] = (
+        df.loc[filter, impact_var].isna().sum()  # / filter.sum()
+    )
+    data1.loc[index, "Available"] = (
+        ~df.loc[filter, impact_var].isna()
+    ).sum()  # / filter.sum()
+    data2.loc[index, "Missing"] = df.loc[filter, impact_var].isna().sum() / filter.sum()
+    data2.loc[index, "Available"] = (
+        ~df.loc[filter, impact_var].isna()
+    ).sum() / filter.sum()
 
-# ax1 = data1.plot.bar(rot=45, stacked=True)
-# ax1.set_title(impact_var)
+ax1 = data1.plot.bar(rot=45, stacked=True)
+ax1.set_title(impact_var)
 
-# ax2 = data2.plot.bar(rot=45, stacked=True)
-# ax2.set_title(impact_var)
+ax2 = data2.plot.bar(rot=45, stacked=True)
+ax2.set_title(impact_var)
 
 # # for c in ax.containers:
 # #     ax.bar_label(c, label_type="center")
@@ -236,3 +238,5 @@ data.to_csv("available_data.csv", sep=";")
 # df["Country"].value_counts()
 
 # # %%
+
+# %%

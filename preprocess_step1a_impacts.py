@@ -12,6 +12,7 @@ import pandas as pd
 import geopandas as gpd
 from shapely.ops import unary_union
 from shapely import wkt
+import numpy as np
 
 # %% Define constants
 FIRST_YEAR = 2000
@@ -26,6 +27,9 @@ PROCESSED_IMPACT_PATH = (
 )
 PROCESSED_IMPACT_PATH_CSV = (
     "data/impact_" + str(FIRST_YEAR) + "_" + str(LAST_YEAR) + ".csv"
+)
+PROCESSED_IMPACT_NO_GEO_PATH_CSV = (
+    "data/impact_no_geo_" + str(FIRST_YEAR) + "_" + str(LAST_YEAR) + ".csv"
 )
 PROCESSED_UNIQUE_IMPACT_PATH_CSV = (
     "data/unique_events_impact_" + str(FIRST_YEAR) + "_" + str(LAST_YEAR) + ".csv"
@@ -263,6 +267,10 @@ df_emdat.to_csv(PROCESSED_EMDAT_PATH, index=False)
 gdf_gdis_raw = gpd.read_file(GDIS_PATH)
 
 # %%
+# Replace iso in gdis that are not in emdat with nan
+iso_indicator = ~gdf_gdis_raw["iso3"].isin(df_emdat["ISO"])
+gdf_gdis_raw.loc[iso_indicator, "iso3"] = np.nan
+# %%
 # Create new ISO variable with filled nans as much as possible
 gdf_gdis_raw["ISO"] = gdf_gdis_raw["iso3"].fillna(
     gdf_gdis_raw["country"].map(country_iso_mapping)
@@ -273,10 +281,16 @@ gdf_gdis_raw["Dis No"] = gdf_gdis_raw["disasterno"] + "-" + gdf_gdis_raw["ISO"]
 
 # %%
 # Drop all data that is not in filtered emdat data set
+gdf_dropped_gdis_raw = gdf_gdis_raw[~gdf_gdis_raw["Dis No"].isin(df_emdat["Dis No"])][
+    ["Dis No", "geometry"]
+]
+
+# %%
 gdf_gdis_raw = gdf_gdis_raw[gdf_gdis_raw["Dis No"].isin(df_emdat["Dis No"])][
     ["Dis No", "geometry"]
 ]
 
+# %%
 # Aggregate to 1 geometry per disaster event
 gdf_gdis_2000_2018 = gdf_gdis_raw.dissolve("Dis No")
 gdf_gdis_2000_2018_dis_no = gdf_gdis_raw["Dis No"].unique()
@@ -284,21 +298,28 @@ gdf_gdis_2000_2018_dis_no = gdf_gdis_raw["Dis No"].unique()
 # Save processed gdis file
 gdf_gdis_2000_2018.to_file(PROCESSED_GDIS_PATH, driver="GPKG")
 
-# %% Alternatively load processed gdis file
-gdf_gdis_2000_2018 = gpd.read_file(PROCESSED_GDIS_PATH)
+# %%
+filter_geom = df_emdat["Dis No"].isin(gdf_gdis_2000_2018_dis_no)
+df_emdat.loc[filter_geom, "geom"] = 1
+
+# %%
+df_emdat.to_csv(PROCESSED_EMDAT_PATH, index=False)
+
+# # %% Alternatively load processed gdis file
+# gdf_gdis_2000_2018 = gpd.read_file(PROCESSED_GDIS_PATH)
 
 # %% Merge impact with disaster locations
 gdf_impact = gdf_gdis_2000_2018.merge(right=df_emdat, how="inner", on="Dis No")
 
 # %% Calculated affected area
-gdf_impact["Affected Area"] = (
-    gdf_impact.to_crs({"init": "epsg:3857"})["geometry"].area / 10**6
-)
+# gdf_impact["Affected Area"] = (
+#     gdf_impact.to_crs({"init": "epsg:3857"})["geometry"].area / 10**6
+# )
 
 # %% Save merged file
 # Drop more columns and save short (standard) version
 df_impact_short = gdf_impact.drop(
-    columns=["Disaster Type", "Disaster Subtype", "Associated Dis", "Associated Dis2"],
+    columns=["Disaster Type", "Disaster Subtype"],
     axis=1,
 )
 
@@ -308,90 +329,4 @@ df_impact_short.to_file(PROCESSED_IMPACT_PATH)
 # %%
 df_impact_short.to_csv(PROCESSED_IMPACT_PATH_CSV, sep=";", index=True)
 
-
-# # %% Merge events that are the same, but have been split across countries.
-
-# df_impact_short = pd.read_csv(PROCESSED_IMPACT_PATH_CSV, sep=";", index_col=0)
-
-# # %%
-# df_impact_short[["Dis Event", "Dis ISO"]] = df_impact_short["Dis No"].str.rsplit(
-#     pat="-", n=1, expand=True
-# )
-
-# duplicate_events = (
-#     df_impact_short["Dis Event"]
-#     .value_counts()[df_impact_short["Dis Event"].value_counts() > 1]
-#     .index
-# ).values
-
-# # %%
-# # identify split events
-# duplicate_events_filter = df_impact_short["Dis Event"].isin(duplicate_events)
-# cols = df_impact_short.columns
-# # new df with only non-duplicate events
-# df_impact_unique = df_impact_short[~duplicate_events_filter]
-# cols = df_impact_unique.columns
-
-
-# # %%
-# # loop through duplicate events
-# for duplicate_event in duplicate_events:
-#     duplicate_event_filter = df_impact_short["Dis Event"] == duplicate_event
-#     new_iso = df_impact_short.loc[duplicate_event_filter, "Dis ISO"].str.cat(sep="-")
-#     new_event_dis_no = duplicate_event + "-" + new_iso
-#     new_country = df_impact_short.loc[duplicate_event_filter, "Country"].str.cat(
-#         sep="-"
-#     )
-#     new_continent = "-".join(
-#         pd.unique(df_impact_short.loc[duplicate_event_filter, "Continent"])
-#     )
-#     new_deaths = df_impact_short.loc[duplicate_event_filter, "Total Deaths"].sum()
-#     new_affected = df_impact_short.loc[duplicate_event_filter, "Total Affected"].sum()
-#     new_damages = df_impact_short.loc[
-#         duplicate_event_filter, "Total Damages, Adjusted ('000 US$')"
-#     ].sum()
-#     gdf_temp = gpd.GeoDataFrame(
-#         wkt.loads(df_impact_short.loc[duplicate_event_filter, "geometry"]),
-#         crs="epsg:4326",
-#     )
-#     new_geometry = unary_union(gdf_temp)
-#     new_affected_area = (
-#         gpd.GeoDataFrame(
-#             index=[0], crs="epsg:3857", geometry=[new_geometry]
-#         ).area.values[0]
-#         / 10**6
-#     )
-#     new_row = pd.DataFrame(
-#         [
-#             [
-#                 new_event_dis_no,
-#                 new_geometry,  # geometry
-#                 new_country,  # Country
-#                 new_iso,
-#                 new_continent,
-#                 df_impact_short.loc[duplicate_event_filter, "Dis Mag Value"].values[0],
-#                 df_impact_short.loc[duplicate_event_filter, "Dis Mag Scale"].values[0],
-#                 new_deaths,
-#                 new_affected,
-#                 new_damages,
-#                 df_impact_short.loc[duplicate_event_filter, "Start Date"].values[0],
-#                 df_impact_short.loc[duplicate_event_filter, "End Date"].values[0],
-#                 df_impact_short.loc[duplicate_event_filter, "Hazard1"].values[0],
-#                 df_impact_short.loc[duplicate_event_filter, "Hazard2"].values[0],
-#                 df_impact_short.loc[duplicate_event_filter, "Hazard3"].values[0],
-#                 new_affected_area,
-#                 duplicate_event,
-#                 new_iso,
-#             ]
-#         ],
-#         columns=cols,
-#     )
-#     df_impact_unique = pd.concat([df_impact_unique, new_row], ignore_index=True)
-
-
-# # %%
-# df_impact_unique.set_index("Dis No").to_csv(
-#     PROCESSED_UNIQUE_IMPACT_PATH_CSV, sep=";", index=True
-# )
-
-# # %%
+# %%

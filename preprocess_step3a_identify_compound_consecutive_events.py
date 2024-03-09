@@ -7,7 +7,7 @@ import datetime
 
 # %% Constants
 PROCESSED_IMPACT_PATH_CSV = "data/impact_2000_2018.csv"
-TIME_LAG = 182
+TIME_LAG = 182  # days
 
 # %% Load impact data
 df_impact = pd.read_csv(PROCESSED_IMPACT_PATH_CSV, sep=";", index_col=0).set_index(
