@@ -2,10 +2,15 @@
 import pandas as pd
 import itertools
 import json
-
+import numpy as np
+import matplotlib.pyplot as plt
 
 # %%
 df = pd.read_csv("data/event_pairs.csv", sep=";")
+df["Percent"] = df.apply(lambda x: np.max([x.Percent1, x.Percent2]), axis=1)
+
+# %%
+plt.hist(df["Percent"])
 
 
 # %%

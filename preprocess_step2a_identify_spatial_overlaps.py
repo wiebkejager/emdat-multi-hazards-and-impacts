@@ -24,9 +24,7 @@ df_impact = pd.read_csv(PROCESSED_IMPACT_PATH_CSV, sep=";", index_col=0).set_ind
 # %%
 df_impact["geometry"] = wkt.loads(df_impact["geometry"])
 gdf_impact = gpd.GeoDataFrame(df_impact, crs="epsg:4326")
-gdf_impact["Affected Area"] = (
-    gdf_impact.to_crs({"init": "epsg:3857"})["geometry"].area / 10**6
-)
+gdf_impact["Affected Area"] = gdf_impact.to_crs(3857)["geometry"].area / 10**6
 
 # %% Create list of indices of all possible event combinations
 event_indices = gdf_impact.index.values
@@ -42,20 +40,21 @@ def check_intersection(
     event1 = gdf.loc[[possible_event_combination[0]]]
     event2 = gdf.loc[[possible_event_combination[1]]]
     if event1["ISO"].values[0] == event2["ISO"].values[0]:
-        intersection = event1.intersection(event2, align=False)
-        area_intersection = (intersection.to_crs({"init": "epsg:3857"}).area / 10**6)[0]
-        if area_intersection > 0:
-            possible_event_combination = list(possible_event_combination)
-            percent_area1 = np.round(
-                area_intersection / event1["Affected Area"][0], decimals=2
-            )
-            percent_area2 = np.round(
-                area_intersection / event2["Affected Area"][0], decimals=2
-            )
-            possible_event_combination.append(np.round(area_intersection))
-            possible_event_combination.append(percent_area1)
-            possible_event_combination.append(percent_area2)
-            event_pairs.append(possible_event_combination)
+        if event1.intersects(event2, align=False)[0]:
+            intersection = event1.intersection(event2, align=False)
+            area_intersection = (intersection.to_crs(3857).area / 10**6)[0]
+            if area_intersection > 0:
+                possible_event_combination = list(possible_event_combination)
+                percent_area1 = np.round(
+                    area_intersection / event1["Affected Area"][0], decimals=2
+                )
+                percent_area2 = np.round(
+                    area_intersection / event2["Affected Area"][0], decimals=2
+                )
+                possible_event_combination.append(np.round(area_intersection))
+                possible_event_combination.append(percent_area1)
+                possible_event_combination.append(percent_area2)
+                event_pairs.append(possible_event_combination)
 
 
 # %%
