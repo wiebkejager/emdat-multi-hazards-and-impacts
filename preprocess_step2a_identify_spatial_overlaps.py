@@ -19,7 +19,7 @@ PROCESSED_IMPACT_PATH_CSV = (
 df_impact = pd.read_csv(PROCESSED_IMPACT_PATH_CSV, sep=";", index_col=0).set_index(
     "Dis No"
 )
-# df_impact = pd.read_csv("data/impact_2000_2018_usa.csv", sep=";").set_index("Dis No")
+#  df_impact = pd.read_csv("data/impact_2000_2018_usa.csv", sep=";").set_index("Dis No")
 
 # %%
 df_impact["geometry"] = wkt.loads(df_impact["geometry"])
@@ -40,9 +40,9 @@ def check_intersection(
     event1 = gdf.loc[[possible_event_combination[0]]]
     event2 = gdf.loc[[possible_event_combination[1]]]
     if event1["ISO"].values[0] == event2["ISO"].values[0]:
-        if event1.intersects(event2, align=False)[0]:
+        if event1.intersects(event2, align=False).iloc[0]:
             intersection = event1.intersection(event2, align=False)
-            area_intersection = (intersection.to_crs(3857).area / 10**6)[0]
+            area_intersection = (intersection.to_crs(3857).area / 10**6).iloc[0]
             if area_intersection > 0:
                 possible_event_combination = list(possible_event_combination)
                 percent_area1 = np.round(
