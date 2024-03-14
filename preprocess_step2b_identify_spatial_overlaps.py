@@ -65,7 +65,7 @@ df_spatially_overlapping_events = pd.DataFrame.from_dict(
 
 # %%
 df_spatially_overlapping_events.to_csv(
-    "data/df_spatially_overlapping_events_.csv", sep=";"
+    "data/df_spatially_overlapping_events.csv", sep=";"
 )
 
 # %%

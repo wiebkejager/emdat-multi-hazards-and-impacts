@@ -48,6 +48,7 @@ df_s_t_overlapping_events.replace("[]", np.nan, inplace=True)
 df_s_t_overlapping_events.to_csv("data/df_s_t_overlapping_events.csv", sep=";")
 df_s_t_overlapping_events.dropna(inplace=True)
 
+
 # %%
 cols = [
     "Dis No 1",
@@ -85,7 +86,7 @@ df = pd.DataFrame(
 
 
 # %%
-def create_new_row() -> pd.DataFrame():
+def create_new_row() -> pd.DataFrame:
     return pd.DataFrame(
         [
             [
