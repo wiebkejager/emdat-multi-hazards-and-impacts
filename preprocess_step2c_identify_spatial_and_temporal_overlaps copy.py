@@ -35,9 +35,14 @@ for i in q:
 
 # %%
 # Find all connnected components in graph and list nodes for each component
-independent_sequences = [list(i) for i in nx.connected_components(G)]
+independent_sequences = [sorted(list(i)) for i in nx.connected_components(G)]
 unique_events_in_independent_sequences = list(
     set(x for l in independent_sequences for x in l)
 )
 
 # %%
+# sort sublists in time
+
+# split according to time_lag
+
+# save as 1 df with time_lag column
