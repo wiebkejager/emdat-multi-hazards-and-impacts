@@ -44,29 +44,34 @@ event_pairs = list(
     df.loc[thres_filter, ["Event1", "Event2"]].itertuples(index=False, name=None)
 )
 
-# %%
-dict_spatially_overlapping_events = (
-    {}
-)  # for each event list all spatially overlapping events
-for event in unique_events:
-    filter_event = [event in ec for ec in event_pairs]
-    overlapping_events = set(
-        itertools.chain.from_iterable((itertools.compress(event_pairs, filter_event)))
-    )
-    if overlapping_events:
-        overlapping_events.remove(event)
-    dict_spatially_overlapping_events[event] = json.dumps(list(overlapping_events))
-
 
 # %%
-df_spatially_overlapping_events = pd.DataFrame.from_dict(
-    dict_spatially_overlapping_events, orient="index", columns=["Overlapping events"]
-)
+df2 = df.loc[thres_filter]
+df2.to_csv("data/event_pairs_50percent.csv", sep=";", index=False)
 
 # %%
-df_spatially_overlapping_events.to_csv(
-    "data/df_spatially_overlapping_events.csv", sep=";"
-)
+# dict_spatially_overlapping_events = (
+#     {}
+# )  # for each event list all spatially overlapping events
+# for event in unique_events:
+#     filter_event = [event in ec for ec in event_pairs]
+#     overlapping_events = set(
+#         itertools.chain.from_iterable((itertools.compress(event_pairs, filter_event)))
+#     )
+#     if overlapping_events:
+#         overlapping_events.remove(event)
+#     dict_spatially_overlapping_events[event] = json.dumps(list(overlapping_events))
+
+
+# # %%
+# df_spatially_overlapping_events = pd.DataFrame.from_dict(
+#     dict_spatially_overlapping_events, orient="index", columns=["Overlapping events"]
+# )
+
+# # %%
+# df_spatially_overlapping_events.to_csv(
+#     "data/df_spatially_overlapping_events.csv", sep=";"
+# )
 
 # %%
 df_impact = pd.read_csv("data/impact_2000_2018_usa.csv", sep=";").set_index("Dis No")
