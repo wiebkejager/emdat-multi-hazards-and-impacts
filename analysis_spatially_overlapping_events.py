@@ -48,7 +48,14 @@ df_spatially_overlapping_events = pd.read_csv(
 df = df_spatially_overlapping_events
 df["Overlapping events"] = df["Overlapping events"].apply(json.loads)
 
-# bring in temporal order?
+
+# %% Determine unique sequences
+for ix, row in df.iterrows():
+    df.loc[ix, "Overlapping events seq"] = json.dumps(
+        sorted(row["Overlapping events"] + [ix])
+    )
+
+len(df["Overlapping events seq"].unique())
 
 # %%  Calculate number of overlapping events & number of overlapping hazards & number of overlapping hazard types
 

@@ -72,6 +72,14 @@ for TIME_LAG in TIME_LAGS:
         "Hazards"
     ].apply(len)
 
+    df_s_t_overlapping_events["Overlapping events"] = df_s_t_overlapping_events[
+        "Overlapping events"
+    ].apply(json.dumps)
+
+    df_s_t_overlapping_events["Hazards"] = df_s_t_overlapping_events["Hazards"].apply(
+        json.dumps
+    )
+
     # df_s_t_overlapping_events.replace("[]", np.nan, inplace=True)
     df_s_t_overlapping_events.to_csv(
         "data/df_s_t_overlapping_events_" + str(TIME_LAG) + ".csv", sep=";", index=True
