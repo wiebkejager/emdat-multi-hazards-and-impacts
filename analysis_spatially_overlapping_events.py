@@ -54,8 +54,8 @@ df["Overlapping events"] = df["Overlapping events"].apply(json.loads)
 
 # add number of overlapping events
 df["Number overlapping events"] = df["Overlapping events"].apply(len)
-sum_overlapping_events = sum(df["Number of overlapping events"] != 0)
 
+# %%
 # Add number overlapping hazards
 df["Hazards"] = np.nan
 df["Total Affected"] = np.nan
