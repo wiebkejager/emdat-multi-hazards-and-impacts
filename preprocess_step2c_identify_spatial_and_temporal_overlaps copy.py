@@ -1,7 +1,10 @@
 # %% Imports
 import pandas as pd
 import networkx as nx
+import json
 
+
+# %%
 FIRST_YEAR = 2000
 LAST_YEAR = 2018
 PROCESSED_IMPACT_PATH_CSV = (
@@ -17,32 +20,82 @@ df_emdat["End Date"] = pd.to_datetime(df_emdat["End Date"])
 df = pd.read_csv("data/event_pairs_50percent.csv", sep=";")
 
 # %% List of event pairs
-list_of_tuples = list(
+list_of_event_pair_tuples = list(
     df.loc[:, ["Event1", "Event2"]].itertuples(index=False, name=None)
 )
-list_of_lists = [list(ele) for ele in list_of_tuples]
+list_of_event_pair_lists = [list(ele) for ele in list_of_event_pair_tuples]
 
 # %%
 G = nx.Graph()
 # Add nodes to Graph
-G.add_nodes_from(sum(list_of_lists, []))
+G.add_nodes_from(sum(list_of_event_pair_lists, []))
 # Create edges from list of nodes
-q = [[(s[i], s[i + 1]) for i in range(len(s) - 1)] for s in list_of_lists]
+q = [[(s[i], s[i + 1]) for i in range(len(s) - 1)] for s in list_of_event_pair_lists]
 for i in q:
     # Add edges to Graph
     G.add_edges_from(i)
 
-
 # %%
 # Find all connnected components in graph and list nodes for each component
-independent_sequences = [sorted(list(i)) for i in nx.connected_components(G)]
+list_of_independent_sequence_lists = [
+    sorted(list(i)) for i in nx.connected_components(G)
+]
 unique_events_in_independent_sequences = list(
-    set(x for l in independent_sequences for x in l)
+    set(x for l in list_of_independent_sequence_lists for x in l)
 )
 
 # %%
 # sort sublists in time
+list_of_independent_sequence_lists_dated = [
+    sorted([tuple([i, df_emdat.loc[i, "Start Date"]]) for i in seq], key=lambda a: a[1])
+    for seq in list_of_independent_sequence_lists
+]
 
-# split according to time_lag
+# %% Add single events to list
 
-# save as 1 df with time_lag column
+
+# %%
+def split_at_timelag(l, TIME_LAG):
+    # return a list of list split at time_lags
+    indices = []
+    prev_index = 0
+    for i in range(1, len(l)):
+        time_diff = (l[i][1] - l[i - 1][1]).days
+        if time_diff > TIME_LAG:
+            indices.append([prev_index, i - 1])
+            prev_index = i
+    if indices != []:
+        return [l[s : e + 1] for s, e in indices]
+    else:
+        return [l]
+
+
+# %% split according to time_lag
+df = pd.DataFrame()
+TIME_LAGS = [0, 91, 182, 365, 6935]
+
+for TIME_LAG in TIME_LAGS:
+    # split lists at timelag
+    list_of_independent_sequence_lists_dated_split = [
+        split_at_timelag(l, TIME_LAG) for l in list_of_independent_sequence_lists_dated
+    ]
+
+    # flatten list 1 level
+    list_of_independent_sequence_lists_dated_split = [
+        x for xs in list_of_independent_sequence_lists_dated_split for x in xs
+    ]
+
+    # remove date and convert list to string
+    list_of_independent_sequence_lists_split = [
+        json.dumps([e[0] for e in l])
+        for l in list_of_independent_sequence_lists_dated_split
+    ]
+
+    # add to dataframe with timelag info
+    dict = {
+        "Overlapping events": list_of_independent_sequence_lists_split,
+        "Timelag": TIME_LAG,
+    }
+    df = pd.concat([df, pd.DataFrame(dict)], ignore_index=True)
+
+# %%
