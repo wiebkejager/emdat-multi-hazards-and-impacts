@@ -1,14 +1,10 @@
 # %% Imports
 import pandas as pd
-import numpy as np
-from shapely import wkt
-import geopandas as gpd
-import json
-import itertools
-import datetime
-from matplotlib.colors import ListedColormap
 import matplotlib.pyplot as plt
+import seaborn as sns
+import json
 
+# %%
 PROCESSED_EMDAT_PATH = "data/emdat_2000_2018.csv"
 
 # %% EM-DAT
@@ -44,66 +40,39 @@ df["No hazards"] = df["Hazards"].apply(len)
 
 
 # %%
-# # %%
-# # Total number of hazards in EMDAT
-# total_hazards = df_emdat.loc[:, "No Hazards"].sum()
-# singles_emdat = sum(df_emdat.loc[:, "No Hazards"] == 1)
-# pairs_emdat = sum(df_emdat.loc[:, "No Hazards"] == 2) * 2
-# triples_emdat = sum(df_emdat.loc[:, "No Hazards"] == 3) * 3
+TIME_LAGS = df["Timelag"].unique()
 
-# # %%
-# TIME_LAG_0 = 0
-# TIME_LAG_91 = 91
-# TIME_LAG_182 = 182
-# TIME_LAG_365 = 365
+df_plot = pd.DataFrame(
+    columns=[
+        "non_overlapping_events",
+        "overlapping_events",
+        "idependent_sets_events",
+        "average_events",
+        "max_events",
+    ]
+)
 
-
-# # %%
-# TIME_LAGS = [TIME_LAG_0, TIME_LAG_91, TIME_LAG_182, TIME_LAG_365]
-# df = pd.DataFrame(
-#     columns=["Hazard occurs as single", "Hazard occurs as multi", "Unique events"]
-# )
-# df.index.name = "Days"
-# for TIME_LAG in TIME_LAGS:
-#     PATH = "data/df_s_t_overlapping_events_" + str(TIME_LAG) + ".csv"
-#     df_temp = pd.read_csv(PATH, sep=";", index_col=0)
-#     df_temp["Overlapping events"] = df_temp["Overlapping events"].apply(json.loads)
-#     df_temp["No overlapping events"] = df_temp["Overlapping events"].apply(len)
-#     single_hazards = sum(df_temp["Number hazards"] == 1)
-#     df.loc[TIME_LAG, "Hazard occurs as single"] = single_hazards
-#     df.loc[TIME_LAG, "Hazard occurs as multi"] = total_hazards - single_hazards
-
-#     for ix, row in df_temp.iterrows():
-#         df_temp.loc[ix, "Overlapping events seq"] = json.dumps(
-#             sorted(row["Overlapping events"] + [ix])
-#         )
-
-#     df.loc[TIME_LAG, "Unique events"] = len(df_temp["Overlapping events seq"].unique())
-#     df.loc[TIME_LAG, "EMDAT events with overlap"] = sum(
-#         df_temp["No overlapping events"] > 0
-#     )
+for TIME_LAG in TIME_LAGS[0:4]:
+    df_temp = df.loc[df["Timelag"] == TIME_LAG]
+    df_plot.loc[TIME_LAG, "non_overlapping_events"] = sum(df_temp["No events"] == 1)
+    df_plot.loc[TIME_LAG, "overlapping_events"] = (
+        len(df_emdat) - df_plot.loc[TIME_LAG, "non_overlapping_events"]
+    )
+    df_plot.loc[TIME_LAG, "idependent_sets_events"] = len(df_temp)
+    df_plot.loc[TIME_LAG, "non_overlapping_hazards"] = sum(df_temp["No hazards"] == 1)
+    df_plot.loc[TIME_LAG, "overlapping_hazards"] = (
+        len(df_emdat) - df_plot.loc[TIME_LAG, "non_overlapping_hazards"]
+    )
 
 
-# # %%
-# import seaborn as sns
+# %%
 
-# fig, ax = plt.subplots(
-#     1,
-#     1,
-#     figsize=(5, 3),
-# )
-# sns.set_style("whitegrid")
-# fig = sns.lineplot(data=df, markers=True)
-# fig.set(ylabel="Number", xlabel="Time lag in days")
-# sns.move_legend(fig, "upper left", bbox_to_anchor=(1, 1))
-# # %%
-# df2 = pd.DataFrame(columns=["single", "multi"])
-# df2.index.name = "Days"
-# for TIME_LAG in TIME_LAGS:
-#     PATH = "data/df_s_t_overlapping_events_" + str(TIME_LAG) + ".csv"
-#     df_temp = pd.read_csv(PATH, sep=";", index_col=0)
-#     no_overlap = sum(df_temp["Number overlapping events"] == 0)
-#     df2.loc[TIME_LAG, "single"] = no_overlap
-#     df2.loc[TIME_LAG, "multi"] = 5868 - no_overlap
-
-# # %%
+fig, (ax1) = plt.subplots(1)
+sns.set_style("whitegrid")
+sns.lineplot(
+    data=df_plot,
+    markers=True,
+    ax=ax1,
+)
+ax1.set(ylabel="Number", xlabel="Time lag in days")
+sns.move_legend(ax1, "upper left", bbox_to_anchor=(1, 1))
