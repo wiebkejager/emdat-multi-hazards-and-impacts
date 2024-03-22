@@ -109,7 +109,13 @@ for TIME_LAG in TIME_LAGS:
 
     # add to dataframe with timelag info
     dict = {
-        "Overlapping events": list_of_independent_sequence_lists_split,
+        "Events": list_of_independent_sequence_lists_split,
         "Timelag": TIME_LAG,
     }
     df = pd.concat([df, pd.DataFrame(dict)], ignore_index=True)
+
+
+# %% Save
+df.to_csv("data/df_s_t_overlapping_events.csv", sep=";")
+
+# %%
