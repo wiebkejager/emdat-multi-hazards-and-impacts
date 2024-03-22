@@ -1,15 +1,10 @@
 # %% Imports
 import pandas as pd
-import itertools
+import networkx as nx
 import json
-import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib.colors import ListedColormap
-from shapely import wkt
-import geopandas as gpd
-import datetime
 
 
+# %%
 FIRST_YEAR = 2000
 LAST_YEAR = 2018
 PROCESSED_IMPACT_PATH_CSV = (
@@ -24,42 +19,97 @@ df_emdat["End Date"] = pd.to_datetime(df_emdat["End Date"])
 # %%
 df = pd.read_csv("data/event_pairs_50percent.csv", sep=";")
 
-# %%
-
-TIME_LAG_0 = 0
-TIME_LAG_91 = 91
-TIME_LAG_182 = 182
-TIME_LAG_365 = 365
-TIME_LAG_6935 = 6935
+# %% List of event pairs
+list_of_event_pair_tuples = list(
+    df.loc[:, ["Event1", "Event2"]].itertuples(index=False, name=None)
+)
+list_of_event_pair_lists = [list(ele) for ele in list_of_event_pair_tuples]
 
 # %%
-TIME_LAGS = [TIME_LAG_0, TIME_LAG_91, TIME_LAG_182, TIME_LAG_365, TIME_LAG_6935]
-TIME_LAG = TIME_LAG_182
+G = nx.Graph()
+# Add nodes to Graph
+G.add_nodes_from(sum(list_of_event_pair_lists, []))
+# Create edges from list of nodes
+q = [[(s[i], s[i + 1]) for i in range(len(s) - 1)] for s in list_of_event_pair_lists]
+for i in q:
+    # Add edges to Graph
+    G.add_edges_from(i)
 
-### Create pairs with temporal overlap
 # %%
-df_lag = df.copy(deep=True)
-df_lag["Temporal Overlap"] = False
-temporal_buffer = datetime.timedelta(days=TIME_LAG)
+# Find all connnected components in graph and list nodes for each component
+list_of_independent_sequence_lists = [
+    sorted(list(i)) for i in nx.connected_components(G)
+]
+unique_events_in_independent_sequences = list(
+    set(x for l in list_of_independent_sequence_lists for x in l)
+)
 
 # %%
-# we compare 2 start dates because some events miss an end date
-for ix, row in df_lag.iterrows():
-    start_event1 = df_emdat.loc[row["Event1"]]["Start Date"]
-    start_event2 = df_emdat.loc[row["Event2"]]["Start Date"]
-    day_difference = (start_event1 - start_event2).days
-    if abs(day_difference) <= TIME_LAG:
-        df_lag.loc[ix, "Temporal Overlap"] = True
+# sort sublists in time
+list_of_independent_sequence_lists_dated = [
+    sorted([tuple([i, df_emdat.loc[i, "Start Date"]]) for i in seq], key=lambda a: a[1])
+    for seq in list_of_independent_sequence_lists
+]
 
-df_lag = df_lag.loc[df_lag["Temporal Overlap"]]
+# %% Add single events to list
+single_events_filter = [
+    ix not in unique_events_in_independent_sequences for ix in df_emdat.index
+]
+list_of_single_event_dated = [
+    [x]
+    for x in list(
+        df_emdat.reset_index()
+        .loc[single_events_filter, ["Dis No", "Start Date"]]
+        .itertuples(index=False, name=None)
+    )
+]
 
-### Create independent sets of events
+
 # %%
-list_lag = []
-while len(df_lag) > 0:
-    start_event11 = df_emdat.loc[df_lag.iloc[0]["Event1"]]["Start Date"]
-    start_event12 = df_emdat.loc[df_lag.iloc[0]["Event2"]]["Start Date"]
+def split_at_timelag(l, TIME_LAG):
+    # return a list of list split at time_lags
     indices = []
-    for ix, row in df_lag.iterrows():
-        start_event21 = df_emdat.loc[row["Event1"]]["Start Date"]
-        start_event22 = df_emdat.loc[row["Event2"]]["Start Date"]
+    first_index = 0
+    last_index = len(l)
+    for i in range(1, len(l)):
+        time_diff = (l[i][1] - l[i - 1][1]).days
+        if time_diff > TIME_LAG:
+            indices.append([first_index, i - 1])
+            first_index = i
+
+    indices.append([first_index, last_index])
+    return [l[s : e + 1] for s, e in indices]
+
+
+# %% split according to time_lag
+df = pd.DataFrame()
+TIME_LAGS = [0, 91, 182, 365, 6935]
+
+for TIME_LAG in TIME_LAGS:
+    # split lists at timelag
+    list_of_independent_sequence_lists_dated_split = [
+        split_at_timelag(l, TIME_LAG) for l in list_of_independent_sequence_lists_dated
+    ]
+
+    # flatten list 1 level
+    list_of_independent_sequence_lists_dated_split = [
+        x for xs in list_of_independent_sequence_lists_dated_split for x in xs
+    ]
+
+    # add single events
+    list_of_independent_sequence_lists_dated_split = (
+        list_of_independent_sequence_lists_dated_split + list_of_single_event_dated
+    )
+
+    # remove date and convert list to string
+    list_of_independent_sequence_lists_split = [
+        json.dumps([e[0] for e in l])
+        for l in list_of_independent_sequence_lists_dated_split
+    ]
+
+    # add to dataframe with timelag info
+    dict = {
+        "Overlapping events": list_of_independent_sequence_lists_split,
+        "Timelag": TIME_LAG,
+    }
+    df = pd.concat([df, pd.DataFrame(dict)], ignore_index=True)
