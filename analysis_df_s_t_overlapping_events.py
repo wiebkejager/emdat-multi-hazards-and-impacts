@@ -44,24 +44,29 @@ TIME_LAGS = df["Timelag"].unique()
 
 df_plot = pd.DataFrame(
     columns=[
-        "non_overlapping_events",
-        "overlapping_events",
-        "idependent_sets_events",
-        "average_events",
-        "max_events",
+        "Event sets",
+        "Number of events without overlap",
+        "Number of events with overlap",
+        "Number of hazards without overlap",
+        "Number of hazards with overlap",
     ]
 )
 
-for TIME_LAG in TIME_LAGS[0:4]:
+for TIME_LAG in TIME_LAGS:
     df_temp = df.loc[df["Timelag"] == TIME_LAG]
-    df_plot.loc[TIME_LAG, "non_overlapping_events"] = sum(df_temp["No events"] == 1)
-    df_plot.loc[TIME_LAG, "overlapping_events"] = (
-        len(df_emdat) - df_plot.loc[TIME_LAG, "non_overlapping_events"]
+    df_plot.loc[TIME_LAG, "Number of events without overlap"] = sum(
+        df_temp["No events"] == 1
     )
-    df_plot.loc[TIME_LAG, "idependent_sets_events"] = len(df_temp)
-    df_plot.loc[TIME_LAG, "non_overlapping_hazards"] = sum(df_temp["No hazards"] == 1)
-    df_plot.loc[TIME_LAG, "overlapping_hazards"] = (
-        len(df_emdat) - df_plot.loc[TIME_LAG, "non_overlapping_hazards"]
+    df_plot.loc[TIME_LAG, "Number of events with overlap"] = (
+        len(df_emdat) - df_plot.loc[TIME_LAG, "Number of events without overlap"]
+    )
+    df_plot.loc[TIME_LAG, "Event sets"] = len(df_temp)
+    df_plot.loc[TIME_LAG, "Number of hazards without overlap"] = sum(
+        df_temp["No hazards"] == 1
+    )
+    df_plot.loc[TIME_LAG, "Number of hazards with overlap"] = (
+        df_temp["No hazards"].sum()
+        - df_plot.loc[TIME_LAG, "Number of hazards without overlap"]
     )
 
 
@@ -70,9 +75,12 @@ for TIME_LAG in TIME_LAGS[0:4]:
 fig, (ax1) = plt.subplots(1)
 sns.set_style("whitegrid")
 sns.lineplot(
-    data=df_plot,
+    data=df_plot.loc[TIME_LAGS[0:4]],
     markers=True,
     ax=ax1,
 )
 ax1.set(ylabel="Number", xlabel="Time lag in days")
 sns.move_legend(ax1, "upper left", bbox_to_anchor=(1, 1))
+
+
+# %%
