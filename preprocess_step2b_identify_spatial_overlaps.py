@@ -33,9 +33,9 @@ plt.ylabel("Number of event pairs")
 
 
 # %%
-min_overlap_thres = 0.5
-thres_filter = (df["Percent1"] > min_overlap_thres) | (
-    df["Percent2"] > min_overlap_thres
+min_overlap_thres = 1
+thres_filter = (df["Percent1"] >= min_overlap_thres) | (
+    df["Percent2"] >= min_overlap_thres
 )
 
 event_pairs = list(df.loc[:, ["Event1", "Event2"]].itertuples(index=False, name=None))
@@ -47,7 +47,7 @@ event_pairs = list(
 
 # %%
 df2 = df.loc[thres_filter]
-df2.to_csv("data/event_pairs_50percent.csv", sep=";", index=False)
+df2.to_csv("data/event_pairs_100percent.csv", sep=";", index=False)
 
 # %%
 # dict_spatially_overlapping_events = (

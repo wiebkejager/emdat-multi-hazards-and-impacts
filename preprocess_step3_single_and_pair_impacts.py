@@ -18,13 +18,28 @@ df_emdat[["Hazard1", "Hazard2", "Hazard3"]] = df_emdat[
 
 
 # %%
-df_s_t_overlapping_events = pd.read_csv(
-    "data/df_s_t_overlapping_events.csv", sep=";", index_col=0
+df_s_t_overlapping_events_50percent = pd.read_csv(
+    "data/df_s_t_overlapping_events_50percent.csv", sep=";", index_col=0
 )
-df_s_t_overlapping_events["Events"] = df_s_t_overlapping_events["Events"].apply(
-    json.loads
-)
+df_s_t_overlapping_events_50percent["Events"] = df_s_t_overlapping_events_50percent[
+    "Events"
+].apply(json.loads)
+df_s_t_overlapping_events_50percent["Min spatial overlap"] = 0.5
 
+
+df_s_t_overlapping_events_100percent = pd.read_csv(
+    "data/df_s_t_overlapping_events_100percent.csv", sep=";", index_col=0
+)
+df_s_t_overlapping_events_100percent["Events"] = df_s_t_overlapping_events_100percent[
+    "Events"
+].apply(json.loads)
+df_s_t_overlapping_events_100percent["Min spatial overlap"] = 1
+
+
+df_s_t_overlapping_events = pd.concat(
+    [df_s_t_overlapping_events_50percent, df_s_t_overlapping_events_100percent],
+    ignore_index=True,
+)
 
 # %%
 cols = [
@@ -52,6 +67,7 @@ cols = [
     "Total Damages 2",
     "Total Damages 12",
     "Timelag",
+    "Min spatial overlap",
 ]
 
 df = pd.DataFrame(
@@ -64,6 +80,7 @@ def create_new_row() -> pd.DataFrame:
     return pd.DataFrame(
         [
             [
+                np.nan,
                 np.nan,
                 np.nan,
                 np.nan,
@@ -145,6 +162,7 @@ for ix, row in df_s_t_overlapping_events.iterrows():
                 )
 
         new_row["Timelag"] = row["Timelag"]
+        new_row["Min spatial overlap"] = row["Min spatial overlap"]
         df = pd.concat([df, new_row], ignore_index=True)
 
     # if is double hazard
@@ -165,6 +183,8 @@ for ix, row in df_s_t_overlapping_events.iterrows():
         new_row["Total Damages 12"] = event1["Total Damages, Adjusted ('000 US$')"]
 
         new_row["Timelag"] = row["Timelag"]
+        new_row["Min spatial overlap"] = row["Min spatial overlap"]
+
         df = pd.concat([df, new_row], ignore_index=True)
 
     else:

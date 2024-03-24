@@ -83,7 +83,7 @@ def split_at_timelag(l, TIME_LAG):
 
 # %% split according to time_lag
 df = pd.DataFrame()
-TIME_LAGS = [0, 91, 182, 365, 6935]
+TIME_LAGS = [0, 30, 91, 182, 365, 6935]
 
 for TIME_LAG in TIME_LAGS:
     # split lists at timelag
@@ -116,6 +116,6 @@ for TIME_LAG in TIME_LAGS:
 
 
 # %% Save
-df.to_csv("data/df_s_t_overlapping_events.csv", sep=";")
+df.to_csv("data/df_s_t_overlapping_events_50percent.csv", sep=";")
 
 # %%

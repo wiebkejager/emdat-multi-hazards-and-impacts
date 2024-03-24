@@ -9,6 +9,8 @@ from my_functions import get_bs_sample_df, get_impact_mean
 
 # %%
 df_all = pd.read_csv("data/df_single_and_pair_impacts.csv", sep=";")
+time_lag_filter = df_all["Timelag"] == 6935
+df_all = df_all[~time_lag_filter]
 
 # %%
 impact_dam = "Total Damages 1"
@@ -114,6 +116,125 @@ df = pd.concat([df1, df2]).reset_index()
 df.loc[:, "eventtype_detailed"] = df[["Hazard 1", "Hazard 2"]].apply(
     lambda x: ",".join(sorted(list(x.dropna()))), axis=1
 )
+
+
+# %% plot singles
+single_hazards = df1["Hazard 1"].unique()
+fig, axs = plt.subplots(
+    9,
+    3,
+    figsize=(12, 24),
+)
+
+impacts = ["Total Damages", "Total Affected", "Total Deaths"]
+
+i = -1
+j = -1
+for ax in axs.reshape(-1):
+    j = j + 1
+    if j > 2:
+        j = 0
+        i = i + 1
+
+    # if i > 8:
+    #     i = 0
+    hazard_filter = df1.loc[:, "Hazard 1"] == single_hazards[i]
+    sns.boxplot(
+        x="Timelag",
+        y=impacts[j],
+        data=df1[hazard_filter],
+        ax=ax,
+        showfliers=False,
+        showmeans=True,
+        meanprops={
+            # "marker": "s",
+            "markerfacecolor": "red",
+            "markeredgecolor": "red",
+        },
+    ).set(xlabel="Time lag")
+    # ax.semilogy(base=2)
+    # ax.grid()
+    ax.set_xticklabels(ax.get_xticklabels())
+    ax.set_title(single_hazards[i])
+    # medians = df[hazard_filter].groupby(["Timelag"])[impacts[j]].quantile(q=0.5).values
+    # nobs = df[hazard_filter]["Timelag"].value_counts().values
+    # nobs = [str(x) for x in nobs.tolist()]
+    # nobs = ["n: " + i for i in nobs]
+
+    # # Add it to the plot
+    # pos = range(len(nobs))
+    # for tick, label in zip(pos, ax.get_xticklabels()):
+    #     ax.text(
+    #         pos[tick],
+    #         medians[tick],
+    #         nobs[tick],
+    #         horizontalalignment="center",
+    #         size="medium",
+    #         color="r",
+    #         weight="bold",
+    #     )
+
+fig.tight_layout()
+
+
+# %% plot singles
+single_hazards = ["fl", "fl", "fl"]  # df1["Hazard 1"].unique()
+fig, axs = plt.subplots(
+    1,
+    3,
+    figsize=(12, 24),
+)
+
+impacts = ["Total Damages", "Total Affected", "Total Deaths"]
+
+i = -1
+j = -1
+for ax in axs.reshape(-1):
+    j = j + 1
+    if j > 2:
+        j = 0
+        i = i + 1
+
+    # if i > 8:
+    #     i = 0
+    hazard_filter = df1.loc[:, "Hazard 1"] == single_hazards[i]
+    sns.boxplot(
+        x="Timelag",
+        y=impacts[j],
+        data=df1[hazard_filter],
+        ax=ax,
+        # showfliers=False,
+        showmeans=True,
+        meanprops={
+            # "marker": "s",
+            "markerfacecolor": "red",
+            "markeredgecolor": "red",
+        },
+    ).set(xlabel="Time lag")
+    # ax.semilogy(base=2)
+    # ax.grid()
+    ax.set_xticklabels(ax.get_xticklabels())
+    ax.set_title(single_hazards[i])
+    # medians = df[hazard_filter].groupby(["Timelag"])[impacts[j]].quantile(q=0.5).values
+    # nobs = df[hazard_filter]["Timelag"].value_counts().values
+    # nobs = [str(x) for x in nobs.tolist()]
+    # nobs = ["n: " + i for i in nobs]
+
+    # # Add it to the plot
+    # pos = range(len(nobs))
+    # for tick, label in zip(pos, ax.get_xticklabels()):
+    #     ax.text(
+    #         pos[tick],
+    #         medians[tick],
+    #         nobs[tick],
+    #         horizontalalignment="center",
+    #         size="medium",
+    #         color="r",
+    #         weight="bold",
+    #     )
+
+fig.tight_layout()
+
 
 # %%
 timelag = 182
@@ -360,7 +481,7 @@ for ax in axs.reshape(-1):
     # )
     sns.pointplot(
         ax=ax,
-        x="event_type",
+        x="Timelag",
         y=impacts[i],
         hue="wholesum",
         data=df_bs[hazard_filter],
@@ -370,6 +491,8 @@ for ax in axs.reshape(-1):
         markers="|",
         legend=False,
     )
+
+    ax.set_title(hazard_group)
 
     sns.pointplot(
         ax=ax,
@@ -393,7 +516,7 @@ for ax in axs.reshape(-1):
 
     ax.yaxis.grid(True)  # Hide the horizontal
 
-fig.suptitle("Timelag: " + str(timelag), fontsize=16)
+# fig.suptitle("Timelag: " + str(timelag), fontsize=16)
 fig.tight_layout()
 
 # %%
