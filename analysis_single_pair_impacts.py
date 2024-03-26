@@ -178,9 +178,19 @@ fig.tight_layout()
 
 
 # %% plot singles
-single_hazards = ["fl", "fl", "fl"]  # df1["Hazard 1"].unique()
+hazards = [
+    "ew",
+    "ew",
+    "ew",
+    "fl",
+    "fl",
+    "fl",
+    "ew,fl",
+    "ew,fl",
+    "ew,fl",
+]
 fig, axs = plt.subplots(
-    1,
+    3,
     3,
     figsize=(12, 24),
 )
@@ -197,13 +207,13 @@ for ax in axs.reshape(-1):
 
     # if i > 8:
     #     i = 0
-    hazard_filter = df1.loc[:, "Hazard 1"] == single_hazards[i]
+    hazard_filter = df.loc[:, "eventtype_detailed"] == hazards[i]
     sns.boxplot(
         x="Timelag",
         y=impacts[j],
-        data=df1[hazard_filter],
+        data=df[hazard_filter],
         ax=ax,
-        # showfliers=False,
+        showfliers=False,
         showmeans=True,
         meanprops={
             # "marker": "s",
@@ -236,15 +246,78 @@ for ax in axs.reshape(-1):
 fig.tight_layout()
 
 
+# %% plot singles
+hazards = [
+    "ew",
+    "fl",
+    "ls",
+]  # df1["Hazard 1"].unique()
+fig, axs = plt.subplots(
+    3,
+    3,
+    figsize=(12, 24),
+)
+
+impacts = ["Total Damages", "Total Affected", "Total Deaths"]
+
+i = -1
+j = 0
+for ax in axs.reshape(-1):
+    i = i + 1
+    if i > 2:
+        j = j + 1
+        i = 0
+
+    # if i > 8:
+    #     i = 0
+    hazard_filter = df.loc[:, "eventtype_detailed"] == hazards[i]
+    sns.boxplot(
+        x="Timelag",
+        y=impacts[j],
+        data=df[hazard_filter],
+        ax=ax,
+        showfliers=False,
+        showmeans=True,
+        meanprops={
+            # "marker": "s",
+            "markerfacecolor": "red",
+            "markeredgecolor": "red",
+        },
+    ).set(xlabel="Time lag")
+    ax.semilogy(base=2)
+    # ax.grid()
+    ax.set_xticklabels(ax.get_xticklabels())
+    ax.set_title(hazards[i])
+    # medians = df[hazard_filter].groupby(["Timelag"])[impacts[j]].quantile(q=0.5).values
+    # nobs = df[hazard_filter]["Timelag"].value_counts().values
+    # nobs = [str(x) for x in nobs.tolist()]
+    # nobs = ["n: " + i for i in nobs]
+
+    # # Add it to the plot
+    # pos = range(len(nobs))
+    # for tick, label in zip(pos, ax.get_xticklabels()):
+    #     ax.text(
+    #         pos[tick],
+    #         medians[tick],
+    #         nobs[tick],
+    #         horizontalalignment="center",
+    #         size="medium",
+    #         color="r",
+    #         weight="bold",
+    #     )
+
+fig.tight_layout()
+
+
 # %%
-timelag = 182
-df = df[df["Timelag"] == timelag]
+# timelag = 182
+# df = df[df["Timelag"] == timelag]
 
 # %%
 fig, axs = plt.subplots(
-    4,
+    2,
     3,
-    figsize=(12, 16),
+    figsize=(12, 8),
     # width_ratios=[3, 3, 3],
 )
 hazard_groups = [
@@ -254,12 +327,12 @@ hazard_groups = [
     ["fl", "ls", "fl,ls"],
     ["fl", "ls", "fl,ls"],
     ["fl", "ls", "fl,ls"],
-    ["fl", "fl", "fl,fl"],
-    ["fl", "fl", "fl,fl"],
-    ["fl", "fl", "fl,fl"],
-    ["eq", "ls", "eq,ls"],
-    ["eq", "ls", "eq,ls"],
-    ["eq", "ls", "eq,ls"],
+    # ["fl", "fl", "fl,fl"],
+    # ["fl", "fl", "fl,fl"],
+    # ["fl", "fl", "fl,fl"],
+    # ["eq", "ls", "eq,ls"],
+    # ["eq", "ls", "eq,ls"],
+    # ["eq", "ls", "eq,ls"],
 ]
 impacts = [
     "Total Damages",
@@ -271,12 +344,12 @@ impacts = [
     "Total Damages",
     "Total Affected",
     "Total Deaths",
-    "Total Damages",
-    "Total Affected",
-    "Total Deaths",
-    "Total Damages",
-    "Total Affected",
-    "Total Deaths",
+    # "Total Damages",
+    # "Total Affected",
+    # "Total Deaths",
+    # "Total Damages",
+    # "Total Affected",
+    # "Total Deaths",
 ]
 
 i = -1
@@ -285,7 +358,7 @@ for ax in axs.reshape(-1):
     hazard_group = hazard_groups[i]
     hazard_filter = df.loc[:, "eventtype_detailed"].isin(hazard_group)
     sns.boxplot(
-        x="eventtype_detailed",
+        x="Timelag",
         y=impacts[i],
         data=df[hazard_filter],
         ax=ax,
@@ -325,7 +398,7 @@ for ax in axs.reshape(-1):
             weight="bold",
         )
 
-fig.suptitle("Timelag: " + str(timelag), fontsize=16)
+# fig.suptitle("Timelag: " + str(timelag), fontsize=16)
 fig.tight_layout()
 
 # %%

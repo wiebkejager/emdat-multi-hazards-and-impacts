@@ -126,25 +126,42 @@ df_plot_50["Min spatial overlap"] = "50%"
 df_plot_100["Min spatial overlap"] = "50%"
 
 # %%
-df_plot = pd.concat([df_plot_50.reset_index(), df_plot_100.reset_index()]).rename(
-    columns={"index": "Timelag"}
-)
+# df_plot = pd.concat([df_plot_50.reset_index(), df_plot_100.reset_index()]).rename(
+#     columns={"index": "Timelag"}
+# )
 
 
 # %%
-fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 5))
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(9, 3))
 sns.set_style("whitegrid")
-sns.lineplot(data=df_plot_50.loc[TIME_LAGS[0:5]], markers=True, ax=ax1, legend=False)
+sns.lineplot(
+    data=df_plot_50.drop(
+        columns=[
+            "Event sets",
+            "Number of hazards with overlap",
+            "Number of events with overlap",
+        ]
+    ).loc[TIME_LAGS[0:5]],
+    markers=True,
+    ax=ax1,
+    legend=False,
+)
 ax1.set(
     ylabel="Number",
     xlabel="Time lag in days",
     title="Min. spatial overlap = 50%",
-    ylim=(0, 7000),
+    ylim=(500, 6000),
 )
 
 sns.set_style("whitegrid")
 sns.lineplot(
-    data=df_plot_100.loc[TIME_LAGS[0:5]],
+    data=df_plot_100.drop(
+        columns=[
+            "Event sets",
+            "Number of hazards with overlap",
+            "Number of events with overlap",
+        ]
+    ).loc[TIME_LAGS[0:5]],
     markers=True,
     ax=ax2,
 )
@@ -152,7 +169,7 @@ ax2.set(
     ylabel="Number",
     xlabel="Time lag in days",
     title="Min. spatial overlap = 100%",
-    ylim=(0, 7000),
+    ylim=(500, 6000),
 )
 
 sns.move_legend(ax2, "upper left", bbox_to_anchor=(1, 1))
@@ -182,11 +199,11 @@ df_total_impacts_plot = df_total_impacts_plot.drop(
 fig, (ax1, ax2, ax3) = plt.subplots(
     1,
     3,
-    figsize=(12, 4),
+    figsize=(12, 3),
 )
 sns.histplot(
     df_total_impacts_plot,
-    x="Criterion",
+    y="Criterion",
     weights="Damages",
     hue="Type",
     multiple="stack",
@@ -198,11 +215,11 @@ sns.histplot(
     legend=False,
 )
 ax1.tick_params(axis="x", rotation=90)
-ax1.set_ylabel("Damages")
+ax1.set_xlabel("Total Damages")
 
 sns.histplot(
     df_total_impacts_plot,
-    x="Criterion",
+    y="Criterion",
     weights="Affected",
     hue="Type",
     multiple="stack",
@@ -214,11 +231,11 @@ sns.histplot(
     legend=False,
 )
 ax2.tick_params(axis="x", rotation=90)
-ax2.set_ylabel("Affected")
+ax2.set_xlabel("Total people affected")
 
 sns.histplot(
     df_total_impacts_plot,
-    x="Criterion",
+    y="Criterion",
     weights="Deaths",
     hue="Type",
     multiple="stack",
@@ -230,7 +247,7 @@ sns.histplot(
     legend=True,
 )
 ax3.tick_params(axis="x", rotation=90)
-ax3.set_ylabel("Deaths")
+ax3.set_xlabel("Total deaths")
 
 
 sns.move_legend(
