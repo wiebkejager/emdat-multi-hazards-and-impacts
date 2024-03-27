@@ -2,7 +2,8 @@
 import pandas as pd
 import numpy as np
 import json
-
+import itertools
+import datetime
 
 # %% Constants
 PROCESSED_EMDAT_PATH = "data/emdat_2000_2018.csv"
@@ -17,15 +18,28 @@ df_emdat[["Hazard1", "Hazard2", "Hazard3"]] = df_emdat[
 
 
 # %%
-min_overlap_thres = 0.5
-max_time_lag = 91
-df_chains = pd.read_csv(
-    "data/df_chain_" + str(min_overlap_thres) + "_" + str(max_time_lag) + ".csv",
-    sep=";",
-    index_col=0,
+df_s_t_overlapping_events_50percent = pd.read_csv(
+    "data/df_s_t_overlapping_events_50percent.csv", sep=";", index_col=0
 )
-df_chains["Events"] = df_chains["Events"].apply(json.loads)
+df_s_t_overlapping_events_50percent["Events"] = df_s_t_overlapping_events_50percent[
+    "Events"
+].apply(json.loads)
+df_s_t_overlapping_events_50percent["Min spatial overlap"] = 0.5
 
+
+df_s_t_overlapping_events_100percent = pd.read_csv(
+    "data/df_s_t_overlapping_events_100percent.csv", sep=";", index_col=0
+)
+df_s_t_overlapping_events_100percent["Events"] = df_s_t_overlapping_events_100percent[
+    "Events"
+].apply(json.loads)
+df_s_t_overlapping_events_100percent["Min spatial overlap"] = 1
+
+
+df_s_t_overlapping_events = pd.concat(
+    [df_s_t_overlapping_events_50percent, df_s_t_overlapping_events_100percent],
+    ignore_index=True,
+)
 
 # %%
 cols = [
@@ -61,6 +75,7 @@ df = pd.DataFrame(
 )
 
 
+# %%
 def create_new_row() -> pd.DataFrame:
     return pd.DataFrame(
         [
@@ -97,7 +112,7 @@ def create_new_row() -> pd.DataFrame:
 
 
 # %% Get impacts for first and second hazards
-for ix, row in df_chains.loc[df_chains["No hazards"] <= 2].iterrows():
+for ix, row in df_s_t_overlapping_events.iterrows():
     dis_no1 = row["Events"][0]
     event1 = df_emdat.loc[dis_no1]
 
@@ -112,11 +127,9 @@ for ix, row in df_chains.loc[df_chains["No hazards"] <= 2].iterrows():
         new_row["Country 1"] = event1["Country"]
         new_row["Continent 1"] = event1["Continent"]
         new_row["Dis Mag Value 1"] = event1["Dis Mag Value"]
-
-        if len(row["Events"]) == 1:
-            new_row["Total Deaths 1"] = event1["Total Deaths"]
-            new_row["Total Affected 1"] = event1["Total Affected"]
-            new_row["Total Damages 1"] = event1["Total Damages, Adjusted ('000 US$')"]
+        new_row["Total Deaths 1"] = event1["Total Deaths"]
+        new_row["Total Affected 1"] = event1["Total Affected"]
+        new_row["Total Damages 1"] = event1["Total Damages, Adjusted ('000 US$')"]
         # new_row["Number Hazards"] = 1
 
         if len(row["Events"]) > 1:
@@ -139,18 +152,17 @@ for ix, row in df_chains.loc[df_chains["No hazards"] <= 2].iterrows():
                 ]
                 # new_row["Number Hazards"] = 2
                 new_row["Total Deaths 12"] = (
-                    event1["Total Deaths"] + event2["Total Deaths"]
+                    new_row["Total Deaths 1"] + new_row["Total Deaths 2"]
                 )
                 new_row["Total Affected 12"] = (
-                    event1["Total Affected"] + event2["Total Affected"]
+                    new_row["Total Affected 1"] + new_row["Total Affected 2"]
                 )
                 new_row["Total Damages 12"] = (
-                    event1["Total Damages, Adjusted ('000 US$')"]
-                    + event2["Total Damages, Adjusted ('000 US$')"]
+                    new_row["Total Damages 1"] + new_row["Total Damages 2"]
                 )
 
-        new_row["Timelag"] = max_time_lag
-        new_row["Min spatial overlap"] = min_overlap_thres
+        new_row["Timelag"] = row["Timelag"]
+        new_row["Min spatial overlap"] = row["Min spatial overlap"]
         df = pd.concat([df, new_row], ignore_index=True)
 
     # if is double hazard
@@ -170,8 +182,8 @@ for ix, row in df_chains.loc[df_chains["No hazards"] <= 2].iterrows():
         new_row["Total Affected 12"] = event1["Total Affected"]
         new_row["Total Damages 12"] = event1["Total Damages, Adjusted ('000 US$')"]
 
-        new_row["Timelag"] = max_time_lag
-        new_row["Min spatial overlap"] = min_overlap_thres
+        new_row["Timelag"] = row["Timelag"]
+        new_row["Min spatial overlap"] = row["Min spatial overlap"]
 
         df = pd.concat([df, new_row], ignore_index=True)
 
@@ -180,14 +192,6 @@ for ix, row in df_chains.loc[df_chains["No hazards"] <= 2].iterrows():
 
 
 # %%
-df.to_csv(
-    "data/df_single_and_pair_impacts_"
-    + str(min_overlap_thres)
-    + "_"
-    + str(max_time_lag)
-    + ".csv",
-    sep=";",
-    index=False,
-)
+df.to_csv("data/df_single_and_pair_impacts.csv", sep=";", index=False)
 
 # %%
