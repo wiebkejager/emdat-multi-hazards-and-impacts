@@ -17,8 +17,8 @@ df_emdat[["Hazard1", "Hazard2", "Hazard3"]] = df_emdat[
 
 
 # %%
-min_overlap_thres = 0.5
-max_time_lag = 91
+min_overlap_thres = 1
+max_time_lag = 0
 df_chains = pd.read_csv(
     "data/df_chain_" + str(min_overlap_thres) + "_" + str(max_time_lag) + ".csv",
     sep=";",

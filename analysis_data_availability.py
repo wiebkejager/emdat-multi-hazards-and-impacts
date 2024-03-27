@@ -9,10 +9,18 @@ import matplotlib.pyplot as plt
 
 
 # %% Constants
-PATH = "data/df_compound_consecutive_events.csv"
+min_overlap_thres = 1
+max_time_lag = 30
 
 # %%
-df = pd.read_csv(PATH, sep=";")
+df = pd.read_csv(
+    "data/df_single_and_pair_impacts_"
+    + str(min_overlap_thres)
+    + "_"
+    + str(max_time_lag)
+    + ".csv",
+    sep=";",
+)
 
 
 # %%
@@ -42,7 +50,13 @@ single_event_counts_dea = (
 single_event_counts = pd.concat(
     [single_event_counts_dam, single_event_counts_aff, single_event_counts_dea], axis=1
 )
-single_event_counts.to_csv("data/single_events_data_availability.csv")
+single_event_counts.to_csv(
+    "data/single_events_data_availability_"
+    + str(min_overlap_thres)
+    + "_"
+    + str(max_time_lag)
+    + ".csv"
+)
 
 
 # %%
@@ -72,7 +86,7 @@ second_event_counts_dea = (
 second_event_counts = pd.concat(
     [second_event_counts_dam, second_event_counts_aff, second_event_counts_dea], axis=1
 )
-second_event_counts.to_csv("data/second_events_data_availability.csv")
+# second_event_counts.to_csv("data/second_events_data_availability.csv")
 
 # %%
 impact_dam = "Total Damages 12"
@@ -101,6 +115,12 @@ double_event_counts_dea = (
 double_event_counts = pd.concat(
     [double_event_counts_dam, double_event_counts_aff, double_event_counts_dea], axis=1
 )
-double_event_counts.to_csv("data/double_events_data_availability.csv")
+double_event_counts.to_csv(
+    "data/double_events_data_availability_"
+    + str(min_overlap_thres)
+    + "_"
+    + str(max_time_lag)
+    + ".csv"
+)
 
 # %%

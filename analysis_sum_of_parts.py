@@ -11,14 +11,32 @@ import missingno as msno
 from my_functions import get_bs_sample_df, get_impact_mean
 
 # %% Constants
-PATH = "data/df_compound_consecutive_events.csv"
+# %% Constants
+min_overlap_thres = 1
+max_time_lag = 30
 
 # %%
-df_all = pd.read_csv(PATH, sep=";")
+df_all_0 = pd.read_csv(
+    "data/df_single_and_pair_impacts_" + str(1) + "_" + str(0) + ".csv",
+    sep=";",
+)
+
+df_all_30 = pd.read_csv(
+    "data/df_single_and_pair_impacts_" + str(1) + "_" + str(30) + ".csv",
+    sep=";",
+)
+
+df_all_91 = pd.read_csv(
+    "data/df_single_and_pair_impacts_" + str(0.5) + "_" + str(91) + ".csv",
+    sep=";",
+)
+
+
+df_all = pd.concat([df_all_0, df_all_30, df_all_91]).reset_index()
 
 # %%
 df1 = df_all.loc[
-    :, ["Hazard 1", "Total Deaths 1", "Total Affected 1", "Total Damages 1"]
+    :, ["Hazard 1", "Total Deaths 1", "Total Affected 1", "Total Damages 1", "Timelag"]
 ].dropna(how="all", subset=["Total Deaths 1", "Total Affected 1", "Total Damages 1"])
 df1["Event"] = "Single"
 df1["Hazard 2"] = np.nan
@@ -37,8 +55,12 @@ df2 = df_all.loc[
         "Total Deaths 12",
         "Total Affected 12",
         "Total Damages 12",
+        "Timelag",
     ],
-].dropna(how="all", subset=["Total Deaths 12", "Total Affected 12", "Total Damages 12"])
+].dropna(
+    how="all",
+    subset=["Total Deaths 12", "Total Affected 12", "Total Damages 12"],
+)
 df2["Event"] = "Double"
 df2 = df2.rename(
     columns={
@@ -57,9 +79,9 @@ df.loc[:, "eventtype_detailed"] = df[["Hazard 1", "Hazard 2"]].apply(
 
 # %%
 fig, axs = plt.subplots(
-    4,
+    2,
     3,
-    figsize=(12, 16),
+    figsize=(12, 12),
     # width_ratios=[3, 3, 3],
 )
 hazard_groups = [
@@ -69,23 +91,8 @@ hazard_groups = [
     ["fl", "ls", "fl,ls"],
     ["fl", "ls", "fl,ls"],
     ["fl", "ls", "fl,ls"],
-    ["fl", "fl", "fl,fl"],
-    ["fl", "fl", "fl,fl"],
-    ["fl", "fl", "fl,fl"],
-    ["eq", "ls", "eq,ls"],
-    ["eq", "ls", "eq,ls"],
-    ["eq", "ls", "eq,ls"],
 ]
 impacts = [
-    "Total Damages",
-    "Total Affected",
-    "Total Deaths",
-    "Total Damages",
-    "Total Affected",
-    "Total Deaths",
-    "Total Damages",
-    "Total Affected",
-    "Total Deaths",
     "Total Damages",
     "Total Affected",
     "Total Deaths",
@@ -113,6 +120,7 @@ for ax in axs.reshape(-1):
             "markerfacecolor": "red",
             "markeredgecolor": "red",
         },
+        hue="Timelag",
     ).set(xlabel="Hazard Type")
     # ax.semilogy(base=2)
     ax.grid()
@@ -120,25 +128,23 @@ for ax in axs.reshape(-1):
 
 fig.tight_layout()
 
-# %%
-df_means = (
-    df[["Total Damages", "Total Affected", "Total Deaths", "eventtype_detailed"]]
-    .groupby(["eventtype_detailed"])
-    .mean()
-)
 
-df_means.loc[
-    ["ew", "fl", "ls", "eq", "fl,ls", "ew,fl", "fl,fl", "eq,ls"]
-].round().to_csv("data/sum_and_whole_damages.csv", sep=";")
+# %%
+# df_means = (
+#     df[["Total Damages", "Total Affected", "Total Deaths", "eventtype_detailed"]]
+#     .groupby(["eventtype_detailed"])
+#     .mean()
+# )
+
+# df_means.loc[
+#     ["ew", "fl", "ls", "eq", "fl,ls", "ew,fl", "fl,fl", "eq,ls"]
+# ].round().to_csv("data/sum_and_whole_damages.csv", sep=";")
 
 
 # %%
 # event_counts = df.loc[:, ["eventtype_detailed"]].value_counts()
 # event_counts.reset_index().plot.bar(rot=45, stacked=True)
 # hazards = sorted(event_counts[event_counts >= 25].index)
-
-
-hazard_pairs = ["fl,ls", "ew,fl", "fl,fl", "eq,ls"]
 
 
 # # %% Compare mean damages: I.e. if and only if Z = X + Y than E(Z) = E(X) + E(Y)
@@ -202,118 +208,117 @@ hazard_pairs = ["fl,ls", "ew,fl", "fl,fl", "eq,ls"]
 
 
 # %% Bootstrap distribution mean damages: I.e. if and only if Z = X + Y than E(Z) = E(X) + E(Y)
-cols = [
-    "sample_id",
-    "event_type",
-    "Total Damages",
-    "Total Affected",
-    "Total Deaths",
-    "wholesum",
-]
-df_bs = pd.DataFrame(
-    columns=cols,
-)
+def bootstrap(df) -> pd.DataFrame:
+    hazard_pairs = ["fl,ls", "ew,fl"]
+    cols = [
+        "sample_id",
+        "event_type",
+        "Total Damages",
+        "Total Affected",
+        "Total Deaths",
+        "wholesum",
+    ]
+    df_bs = pd.DataFrame(
+        columns=cols,
+    )
 
-n = 1
-N = 1000
-impact_vars = ["Total Damages", "Total Affected", "Total Deaths"]
+    n = 1
+    N = 1000
 
-for hazard_pair in hazard_pairs:
-    [haz1, haz2] = hazard_pair.split(",")
-    for n in range(N):
-        df_bs_haz1 = get_bs_sample_df(df, haz1)
-        df_bs_haz2 = get_bs_sample_df(df, haz2)
-        df_bs_haz12 = get_bs_sample_df(df, hazard_pair)
+    for hazard_pair in hazard_pairs:
+        [haz1, haz2] = hazard_pair.split(",")
+        for n in range(N):
+            df_bs_haz1 = get_bs_sample_df(df, haz1)
+            df_bs_haz2 = get_bs_sample_df(df, haz2)
+            df_bs_haz12 = get_bs_sample_df(df, hazard_pair)
 
-        whole_damages = get_impact_mean(df_bs_haz12, "Total Damages")
-        haz1_damages = get_impact_mean(df_bs_haz1, "Total Damages")
-        haz2_damages = get_impact_mean(df_bs_haz2, "Total Damages")
-        sum_damages = haz1_damages + haz2_damages
+            whole_damages = get_impact_mean(df_bs_haz12, "Total Damages")
+            haz1_damages = get_impact_mean(df_bs_haz1, "Total Damages")
+            haz2_damages = get_impact_mean(df_bs_haz2, "Total Damages")
+            sum_damages = haz1_damages + haz2_damages
 
-        whole_affected = get_impact_mean(df_bs_haz12, "Total Affected")
-        haz1_affected = get_impact_mean(df_bs_haz1, "Total Affected")
-        haz2_affected = get_impact_mean(df_bs_haz2, "Total Affected")
-        sum_affected = haz1_affected + haz2_affected
+            whole_affected = get_impact_mean(df_bs_haz12, "Total Affected")
+            haz1_affected = get_impact_mean(df_bs_haz1, "Total Affected")
+            haz2_affected = get_impact_mean(df_bs_haz2, "Total Affected")
+            sum_affected = haz1_affected + haz2_affected
 
-        whole_deaths = get_impact_mean(df_bs_haz12, "Total Deaths")
-        haz1_deaths = get_impact_mean(df_bs_haz1, "Total Deaths")
-        haz2_deaths = get_impact_mean(df_bs_haz2, "Total Deaths")
-        sum_deaths = haz1_deaths + haz2_deaths
+            whole_deaths = get_impact_mean(df_bs_haz12, "Total Deaths")
+            haz1_deaths = get_impact_mean(df_bs_haz1, "Total Deaths")
+            haz2_deaths = get_impact_mean(df_bs_haz2, "Total Deaths")
+            sum_deaths = haz1_deaths + haz2_deaths
 
-        new_row1 = pd.DataFrame(
-            [
+            new_row1 = pd.DataFrame(
                 [
-                    n,
-                    hazard_pair,
-                    whole_damages,
-                    whole_affected,
-                    whole_deaths,
-                    "Whole",
-                ]
-            ],
-            columns=cols,
-        )
-        new_row2 = pd.DataFrame(
-            [
+                    [
+                        n,
+                        hazard_pair,
+                        whole_damages,
+                        whole_affected,
+                        whole_deaths,
+                        "Whole",
+                    ]
+                ],
+                columns=cols,
+            )
+            new_row2 = pd.DataFrame(
                 [
-                    n,
-                    hazard_pair,
-                    sum_damages,
-                    sum_affected,
-                    sum_deaths,
-                    "Sum",
-                ]
-            ],
-            columns=cols,
-        )
-        new_row3 = pd.DataFrame(
-            [
+                    [
+                        n,
+                        hazard_pair,
+                        sum_damages,
+                        sum_affected,
+                        sum_deaths,
+                        "Sum",
+                    ]
+                ],
+                columns=cols,
+            )
+            new_row3 = pd.DataFrame(
                 [
-                    n,
-                    hazard_pair,
-                    haz1_damages,
-                    haz1_affected,
-                    haz1_deaths,
-                    "Haz1",
-                ]
-            ],
-            columns=cols,
-        )
-        new_row4 = pd.DataFrame(
-            [
+                    [
+                        n,
+                        hazard_pair,
+                        haz1_damages,
+                        haz1_affected,
+                        haz1_deaths,
+                        "Haz1",
+                    ]
+                ],
+                columns=cols,
+            )
+            new_row4 = pd.DataFrame(
                 [
-                    n,
-                    hazard_pair,
-                    haz2_damages,
-                    haz2_affected,
-                    haz2_deaths,
-                    "Haz2",
-                ]
-            ],
-            columns=cols,
-        )
+                    [
+                        n,
+                        hazard_pair,
+                        haz2_damages,
+                        haz2_affected,
+                        haz2_deaths,
+                        "Haz2",
+                    ]
+                ],
+                columns=cols,
+            )
 
-        df_bs = pd.concat([df_bs, new_row3], ignore_index=True)
-        df_bs = pd.concat([df_bs, new_row4], ignore_index=True)
-        df_bs = pd.concat([df_bs, new_row2], ignore_index=True)
-        df_bs = pd.concat([df_bs, new_row1], ignore_index=True)
+            df_bs = pd.concat([df_bs, new_row3], ignore_index=True)
+            df_bs = pd.concat([df_bs, new_row4], ignore_index=True)
+            df_bs = pd.concat([df_bs, new_row2], ignore_index=True)
+            df_bs = pd.concat([df_bs, new_row1], ignore_index=True)
 
-    n = n + 1
+        n = n + 1
+
+    return df_bs
 
 
 # %%
-fig, axs = plt.subplots(4, 3, figsize=(12, 12))
+df_0 = df.loc[df["Timelag"] == 0]
+df_30 = df.loc[df["Timelag"] == 30]
+df_91 = df.loc[df["Timelag"] == 91]
+df_bs = bootstrap(df_91)
+# %%
+fig, axs = plt.subplots(2, 3, figsize=(12, 8))
 
 impacts = [
-    "Total Damages",
-    "Total Affected",
-    "Total Deaths",
-    "Total Damages",
-    "Total Affected",
-    "Total Deaths",
-    "Total Damages",
-    "Total Affected",
-    "Total Deaths",
     "Total Damages",
     "Total Affected",
     "Total Deaths",

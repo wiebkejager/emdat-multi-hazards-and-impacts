@@ -44,7 +44,7 @@ def get_influencing_events(event, event_pairs, df_emdat) -> list:
 
 # %%
 min_overlap_thres = 1
-max_time_lag = 30
+max_time_lag = 0
 # for min_overlap_thres in min_overlap_thress:
 #     for max_time_lag in max_time_lags:
 
