@@ -8,53 +8,47 @@ from shapely import wkt
 import geopandas as gpd
 
 # %%
-PROCESSED_EMDAT_PATH = "data/emdat_2000_2018.csv"
+# PROCESSED_EMDAT_PATH = "data/emdat_2000_2018.csv"
 
-# %% EM-DAT
-df_emdat = pd.read_csv(PROCESSED_EMDAT_PATH).set_index("Dis No")
-df_emdat.loc[:, "Hazards"] = df_emdat[["Hazard1", "Hazard2", "Hazard3"]].apply(
-    lambda x: list(x.dropna()), axis=1
-)
-df_emdat.loc[:, "No hazards"] = df_emdat.loc[:, "Hazards"].apply(len)
+# # %% EM-DAT
+# df_emdat = pd.read_csv(PROCESSED_EMDAT_PATH).set_index("Dis No")
+# df_emdat.loc[:, "Hazards"] = df_emdat[["Hazard1", "Hazard2", "Hazard3"]].apply(
+#     lambda x: list(x.dropna()), axis=1
+# )
+# df_emdat.loc[:, "No hazards"] = df_emdat.loc[:, "Hazards"].apply(len)
 
 
 # %% s-t overlapping events
-min_overlap_thres = 1
-max_time_lag = 30
-df_chain_1 = pd.read_csv(
-    "data/df_chain_" + str(min_overlap_thres) + "_" + str(max_time_lag) + ".csv",
-    sep=";",
-    index_col=0,
-)
-df_chain_1["Events"] = df_chain_1["Events"].apply(json.loads)
-df_chain_1["Hazards"] = df_chain_1["Hazards"].apply(json.loads)
+min_overlap_thress = [0.25, 0.5, 0.75, 1]
+max_time_lags = [0, 30, 91, 182, 365]
 
-min_overlap_thres = 0.5
-max_time_lag = 91
-df_chain_2 = pd.read_csv(
-    "data/df_chain_" + str(min_overlap_thres) + "_" + str(max_time_lag) + ".csv",
-    sep=";",
-    index_col=0,
-)
-df_chain_2["Events"] = df_chain_2["Events"].apply(json.loads)
-df_chain_2["Hazards"] = df_chain_2["Hazards"].apply(json.loads)
+df_chains = pd.DataFrame()
+df_plot = pd.DataFrame()
 
-# %%
-var = "No events"
-print(df_chain_1[var].max())
-print(df_chain_1[var].median())
-print(df_chain_1[var].mean())
-print("")
-print(df_chain_2[var].max())
-print(df_chain_2[var].median())
-print(df_chain_2[var].mean())
+for min_overlap_thres in min_overlap_thress:
+    for max_time_lag in max_time_lags:
+        df_chain_temp = pd.read_csv(
+            "data/df_chain_"
+            + str(min_overlap_thres)
+            + "_"
+            + str(max_time_lag)
+            + ".csv",
+            sep=";",
+            index_col=0,
+        )
+        df_chain_temp["Timelag"] = max_time_lag
+        df_chain_temp["Overlap"] = min_overlap_thres
+        df_chains = pd.concat([df_chains, df_chain_temp], ignore_index=True)
 
 
 # %%
-
-foo = df_chain_1.loc["2008-0374-CHN", "Events"]
-foo2 = df_emdat.loc[foo]
-
+one_event_filter = df_chains["No events"] == 1
+df_plot_events = (
+    df_chains.loc[one_event_filter, ["No events", "Timelag", "Overlap"]]
+    .groupby(by=["Timelag", "Overlap"])
+    .agg("sum")
+)
+df_plot_events
 
 # %%
 # df_impact = pd.read_csv("data/impact_2000_2018.csv", sep=";")
@@ -63,18 +57,18 @@ foo2 = df_emdat.loc[foo]
 
 
 # %%
-df_impact = pd.read_csv("data/impact_2000_2018_chn.csv", sep=";").set_index("Dis No")
-# %%
-df_impact["geometry"] = wkt.loads(df_impact["geometry"])
-gdf_impact = gpd.GeoDataFrame(df_impact, crs="epsg:4326")
+# df_impact = pd.read_csv("data/impact_2000_2018_chn.csv", sep=";").set_index("Dis No")
+# # %%
+# df_impact["geometry"] = wkt.loads(df_impact["geometry"])
+# gdf_impact = gpd.GeoDataFrame(df_impact, crs="epsg:4326")
 
-# %%
-gdf_impact.loc[foo].reset_index().plot(column="Dis No", alpha=0.2, legend=True)
+# # %%
+# gdf_impact.loc[foo].reset_index().plot(column="Dis No", alpha=0.2, legend=True)
 
-# %%
-gdf_impact.loc[["2008-0374-CHN"]].reset_index().plot(
-    column="Dis No", alpha=0.2, legend=True
-)
+# # %%
+# gdf_impact.loc[["2008-0374-CHN"]].reset_index().plot(
+#     column="Dis No", alpha=0.2, legend=True
+# )
 
 # axs.reshape(-1)[0].set_title("a) 0% mutual overlap between 2000-0021-USA 2000-0232-USA")
 

@@ -39,7 +39,7 @@ plt.ylabel("Number of event pairs")
 
 
 # %%
-min_overlap_thress = [0, 0.5, 1]
+min_overlap_thress = [0, 0.25, 0.5, 0.75, 1]
 max_time_lags = [0, 30, 91, 182, 365, 100000]
 
 for min_overlap_thres in min_overlap_thress:
@@ -58,28 +58,3 @@ for min_overlap_thres in min_overlap_thress:
 
 
 # %%
-# event_pairs = list(df.loc[:, ["Event1", "Event2"]].itertuples(index=False, name=None))
-# unique_events = df_emdat.index.values
-# event_pairs = list(
-#     df.loc[thres_filter, ["Event1", "Event2"]].itertuples(index=False, name=None)
-# )
-
-
-# # %% investigate temporal overlap":
-# timelags = [
-#     abs(
-#         (
-#             pd.to_datetime(df_emdat.loc[event_pair[0], "Start Date"])
-#             - pd.to_datetime(df_emdat.loc[event_pair[1], "Start Date"])
-#         ).days
-#     )
-#     for event_pair in event_pairs
-# ]
-
-# # %%
-# print("0: ", sum([timelag <= 0 for timelag in timelags]))
-# print("30: ", sum([timelag <= 30 for timelag in timelags]))
-# print("91: ", sum([timelag <= 91 for timelag in timelags]))
-# print("182: ", sum([timelag <= 182 for timelag in timelags]))
-# print("365: ", sum([timelag <= 365 for timelag in timelags]))
-# print("1000000: ", sum([timelag <= 1000000 for timelag in timelags]))
