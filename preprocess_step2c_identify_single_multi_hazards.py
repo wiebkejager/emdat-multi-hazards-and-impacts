@@ -16,6 +16,7 @@ PROCESSED_IMPACT_PATH_CSV = (
     "data/impact_" + str(FIRST_YEAR) + "_" + str(LAST_YEAR) + ".csv"
 )
 PROCESSED_EMDAT_PATH = "data/emdat_2000_2018.csv"
+NO_HAZARDS = 7605
 
 # %%
 df_emdat = pd.read_csv(PROCESSED_EMDAT_PATH).set_index("Dis No")
@@ -82,7 +83,11 @@ df_plot = (
     .reset_index()
 )
 
+# %%
 df_plot = df_plot.rename(columns={"No hazards": "Number of single hazards"})
+df_plot["Proportion of single hazards"] = (
+    df_plot["Number of single hazards"] / NO_HAZARDS * 100
+)
 df_plot["Spatial overlap"] = df_plot["Spatial overlap"] * 100
 df_plot["Spatial overlap"] = df_plot["Spatial overlap"].astype(int).astype(str) + "%"
 
@@ -90,24 +95,30 @@ df_plot["Spatial overlap"] = df_plot["Spatial overlap"].astype(int).astype(str) 
 overlap_filter = (df_plot["Spatial overlap"] == "50%") | (
     df_plot["Spatial overlap"] == "100%"
 )
+df_plot = df_plot.rename(columns={"Spatial overlap": "Minimum spatial overlap"})
+
+
+# %%
 sns.set_style("whitegrid", {"grid.linestyle": ":"})
-ax = sns.lineplot(
+fig, ax = plt.subplots(1, 1, figsize=(6, 6))
+sns.lineplot(
     data=df_plot[overlap_filter],
     x="Time lag",
-    y="Number of single hazards",
-    hue="Spatial overlap",
+    y="Proportion of single hazards",
+    hue="Minimum spatial overlap",
     markers=True,
     legend=True,
     palette=sns.color_palette("Purples", n_colors=2),
     linewidth=4,
+    ax=ax,
 )
 
-ax.set_xlabel("Time lag [days]", fontsize=25)
-ax.set_ylabel("Number of single hazards", fontsize=25)
+ax.set_xlabel("Maximum time lag [days]", fontsize=25)
+ax.set_ylabel("Propotion of single hazards [%]", fontsize=25)
 ax.tick_params(labelsize=20)
 # ax.set_title("Single Hazards in EM-DAT 2000 - 2018", fontsize = 25)
 plt.setp(ax.get_legend().get_texts(), fontsize="20")  # for legend text
 plt.setp(ax.get_legend().get_title(), fontsize="25")  # for legend title
-
 plt.tight_layout()
+
 # %%
