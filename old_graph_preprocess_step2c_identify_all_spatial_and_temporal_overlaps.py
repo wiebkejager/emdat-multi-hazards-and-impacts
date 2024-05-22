@@ -17,7 +17,7 @@ df_emdat = pd.read_csv(PROCESSED_EMDAT_PATH).set_index("Dis No")
 df_emdat["Start Date"] = pd.to_datetime(df_emdat["Start Date"])
 df_emdat["End Date"] = pd.to_datetime(df_emdat["End Date"])
 # %%
-df = pd.read_csv("data/event_pairs_50percent.csv", sep=";")
+df = pd.read_csv("data/event_pairs_0.5_365.csv", sep=";")
 
 # %% List of event pairs
 list_of_event_pair_tuples = list(
