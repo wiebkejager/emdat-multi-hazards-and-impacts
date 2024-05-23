@@ -108,16 +108,16 @@ df_plot = (
 
 
 # %%
-df_plot["Total Damages"] = df_plot["Total Damages"] / total_damages * 100
-df_plot["Total People Affected"] = (
+df_plot["Total Damages"] = 100 - df_plot["Total Damages"] / total_damages * 100
+df_plot["Total People Affected"] = 100 - (
     df_plot["Total People Affected"] / total_affected * 100
 )
-df_plot["Total Deaths"] = df_plot["Total Deaths"] / total_deaths * 100
+df_plot["Total Deaths"] = 100 - df_plot["Total Deaths"] / total_deaths * 100
 
 
 # %%
 df_plot = df_plot.rename(columns={"No hazards": "Number of single hazards"})
-df_plot["Proportion of single hazards"] = (
+df_plot["Proportion of hazards"] = 100 - (
     df_plot["Number of single hazards"] / NO_HAZARDS * 100
 )
 df_plot["Spatial overlap"] = df_plot["Spatial overlap"] * 100
@@ -130,19 +130,23 @@ overlap_filter = (df_plot["Spatial overlap"] >= "25%") & (
 df_plot = df_plot.rename(columns={"Spatial overlap": "Minimum spatial overlap"})
 
 
+# %% color palette
+cp = sns.color_palette("Greys", n_colors=3)
+cp2 = [cp[0], cp[1], cp[2], cp[1], cp[0]]
+
 # %%
 sns.set_style("whitegrid")
-fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(13, 13))
+fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(14, 12))
 
 sns.lineplot(
-    data=df_plot[overlap_filter],
+    data=df_plot,
     x="Time lag",
-    y="Proportion of single hazards",
+    y="Proportion of hazards",
     hue="Minimum spatial overlap",
     style="Minimum spatial overlap",
     markers=True,
-    legend=False,
-    palette=sns.color_palette("Greys", n_colors=2),
+    legend=True,
+    palette=cp2,
     ax=ax1,
     markersize=12,
 )
@@ -151,22 +155,24 @@ ax1.set_xlabel("Maximum time lag [days]", fontsize=20)
 ax1.set_ylabel("Hazards [%]", fontsize=20)
 ax1.tick_params(labelsize=18)
 ax1.set_title("(a)", fontsize=20)
+ax1.set_ylim([40, 100])
+plt.setp(ax1.get_legend().get_title(), fontsize="20")  # for legend title
+
 
 # ax.set_title("Single Hazards in EM-DAT 2000 - 2018", fontsize = 20)
 # plt.setp(ax1.get_legend().get_texts(), fontsize="20")  # for legend text
 # plt.setp(ax1.get_legend().get_title(), fontsize="20")  # for legend title
-plt.tight_layout()
 
 
 sns.lineplot(
-    data=df_plot[overlap_filter],
+    data=df_plot,
     x="Time lag",
     y="Total Damages",
     hue="Minimum spatial overlap",
     style="Minimum spatial overlap",
     markers=True,
-    legend=True,
-    palette=sns.color_palette("Greys", n_colors=2),
+    legend=False,
+    palette=cp2,
     ax=ax2,
     markersize=12,
 )
@@ -175,20 +181,21 @@ ax2.set_xlabel("Maximum time lag [days]", fontsize=20)
 ax2.set_ylabel("Total Damages [%]", fontsize=20)
 ax2.tick_params(labelsize=18)
 ax2.set_title("(b)", fontsize=20)
+ax2.set_ylim([40, 100])
+
 
 # ax.set_title("Single Hazards in EM-DAT 2000 - 2018", fontsize = 20)
-plt.setp(ax2.get_legend().get_title(), fontsize="20")  # for legend title
 plt.tight_layout()
 
 sns.lineplot(
-    data=df_plot[overlap_filter],
+    data=df_plot,
     x="Time lag",
     y="Total People Affected",
     hue="Minimum spatial overlap",
     style="Minimum spatial overlap",
     markers=True,
     legend=False,
-    palette=sns.color_palette("Greys", n_colors=2),
+    palette=cp2,
     ax=ax3,
     markersize=12,
 )
@@ -197,20 +204,22 @@ ax3.set_xlabel("Maximum time lag [days]", fontsize=20)
 ax3.set_ylabel("Total People Affected [%]", fontsize=20)
 ax3.tick_params(labelsize=18)
 ax3.set_title("(c)", fontsize=20)
+ax3.set_ylim([40, 100])
+
 # ax.set_title("Single Hazards in EM-DAT 2000 - 2018", fontsize = 20)
 # plt.setp(ax3.get_legend().get_texts(), fontsize="20")  # for legend text
 # plt.setp(ax3.get_legend().get_title(), fontsize="20")  # for legend title
 plt.tight_layout()
 
 sns.lineplot(
-    data=df_plot[overlap_filter],
+    data=df_plot,
     x="Time lag",
     y="Total Deaths",
     hue="Minimum spatial overlap",
     style="Minimum spatial overlap",
     markers=True,
     legend=False,
-    palette=sns.color_palette("Greys", n_colors=2),
+    palette=cp2,
     ax=ax4,
     markersize=12,
 )
@@ -219,11 +228,13 @@ ax4.set_xlabel("Maximum time lag [days]", fontsize=20)
 ax4.set_ylabel("Total Deaths [%]", fontsize=20)
 ax4.tick_params(labelsize=18)
 ax4.set_title("(d)", fontsize=20)
+ax4.set_ylim([40, 100])
+
 # # plt.setp(ax4.get_legend().get_texts(), fontsize="20")  # for legend text
 # plt.setp(ax4.get_legend().get_title(), fontsize="20")  # for legend title
 plt.tight_layout(pad=3)
 
-sns.move_legend(ax2, "upper right", bbox_to_anchor=(1, 1), prop={"size": 18})
+sns.move_legend(ax1, "upper left", bbox_to_anchor=(2.3, 1.025), prop={"size": 18})
 
 
 # %%
