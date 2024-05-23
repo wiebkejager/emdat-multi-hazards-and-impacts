@@ -19,8 +19,8 @@ import geopandas as gpd
 
 
 # %% s-t overlapping events
-min_overlap_thress = [0.25, 0.5, 0.75, 1]
-max_time_lags = [0, 30, 91, 182, 365]
+min_overlap_thress = [0.5]  # [0.25, 0.5, 0.75, 1]
+max_time_lags = [91]  # [0, 30, 91, 182, 365]
 
 df_chains = pd.DataFrame()
 df_plot = pd.DataFrame()
@@ -42,13 +42,32 @@ for min_overlap_thres in min_overlap_thress:
 
 
 # %%
-one_event_filter = df_chains["No events"] == 1
-df_plot_events = (
-    df_chains.loc[one_event_filter, ["No events", "Timelag", "Overlap"]]
-    .groupby(by=["Timelag", "Overlap"])
-    .agg("sum")
-)
-df_plot_events
+# Identify independent events
+ll_events = df_chains["Events"].to_list()
+ll_unique_events = list()
+
+# %%
+for l_events in ll_events:
+    # ll_events2 = ll_events
+    # ll_events2.remove(l_events)
+    if not any(
+        set(json.loads(l_events)).issubset(json.loads(l_events2))
+        for l_events2 in ll_events
+    ):
+        ll_unique_events.append(l_events)
+
+
+# %%
+df_ind_events = df_chains.loc[df_chains["Events"].isin(ll_unique_events)]
+
+# %%
+# one_event_filter = df_chains["No events"] == 1
+# df_plot_events = (
+#     df_chains.loc[one_event_filter, ["No events", "Timelag", "Overlap"]]
+#     .groupby(by=["Timelag", "Overlap"])
+#     .agg("sum")
+# )
+# df_plot_events
 
 # %%
 # df_impact = pd.read_csv("data/impact_2000_2018.csv", sep=";")
