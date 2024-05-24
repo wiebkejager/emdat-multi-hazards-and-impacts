@@ -46,19 +46,23 @@ for min_overlap_thres in min_overlap_thress:
 ll_events = df_chains["Events"].to_list()
 ll_unique_events = list()
 
-# %%
 for l_events in ll_events:
-    # ll_events2 = ll_events
-    # ll_events2.remove(l_events)
+    ll_events2 = ll_events
+    ll_events2.remove(l_events)
     if not any(
-        set(json.loads(l_events)).issubset(json.loads(l_events2))
-        for l_events2 in ll_events
+        set(json.loads(l_events)).issubset(set(json.loads(l_events2)))
+        for l_events2 in ll_events2
     ):
         ll_unique_events.append(l_events)
 
-
-# %%
 df_ind_events = df_chains.loc[df_chains["Events"].isin(ll_unique_events)]
+
+
+# %% Unique hazards per event
+df_ind_events["Unique hazards"] = df_ind_events["Hazards"].apply(
+    lambda x: set(json.loads(x))
+)
+df_ind_events["No unique hazards"] = df_ind_events["Unique hazards"].apply(len)
 
 # %%
 # one_event_filter = df_chains["No events"] == 1
