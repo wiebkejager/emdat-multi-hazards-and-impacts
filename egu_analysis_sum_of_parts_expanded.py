@@ -276,11 +276,11 @@ df_bs = bootstrap(df)
 
 
 # %%
-sns.set_style("white")
+sns.set_style("whitegrid")
 fig, axs = plt.subplots(
     3,
     4,
-    figsize=(14, 10),
+    figsize=(12, 100),
     # width_ratios=[3, 3, 3],
 )
 hazard_groups = [
@@ -289,27 +289,27 @@ hazard_groups = [
     ["eq", "ls", "eq,ls"],
     ["fl", "fl", "fl,fl"],
     ["ew", "fl", "ew,fl"],
+    ["fl", "fl", "fl,fl"],
     ["fl", "ls", "fl,ls"],
     ["eq", "ls", "eq,ls"],
-    ["fl", "fl", "fl,fl"],
     ["ew", "fl", "ew,fl"],
+    ["fl", "fl", "fl,fl"],
     ["fl", "ls", "fl,ls"],
     ["eq", "ls", "eq,ls"],
-    ["fl", "fl", "fl,fl"],
 ]
 impacts = [
     "Total Damages $1 billion",
     "Total Damages $1 billion",
     "Total Damages $1 billion",
     "Total Damages $1 billion",
-    "Total Affected",
-    "Total Affected",
-    "Total Affected",
-    "Total Affected",
     "Total Deaths",
     "Total Deaths",
     "Total Deaths",
     "Total Deaths",
+    "Total Affected",
+    "Total Affected",
+    "Total Affected",
+    "Total Affected",
 ]
 
 i = -1
@@ -327,8 +327,8 @@ for ax in axs.reshape(-1):
         showfliers=False,
         showmeans=True,
         meanprops={
-            "markerfacecolor": sns.color_palette("BuPu", n_colors=1)[0],
-            "markeredgecolor": sns.color_palette("BuPu", n_colors=1)[0],
+            "markerfacecolor": sns.color_palette("Greys", n_colors=1)[0],
+            "markeredgecolor": sns.color_palette("Greys", n_colors=1)[0],
             "marker": "o",
             "markersize": "7",
             # "alpha": 0,
@@ -338,6 +338,7 @@ for ax in axs.reshape(-1):
     ax.set_ylabel(impacts[i], fontsize=15)
     ax.tick_params(labelsize=10)
     ax.set_xticklabels(ax.get_xticklabels(), fontsize=15)
+    ax.semilogy()
     # ax.set_ylim(0, 3.25)
 
     hazard_group = hazard_groups[i]
@@ -353,7 +354,7 @@ for ax in axs.reshape(-1):
         errorbar=("pi", 95),
         markers="|",
         legend=False,
-        palette=sns.color_palette("BuPu", n_colors=1),
+        palette=sns.color_palette("Greys", n_colors=1),
         # color="white",
         capsize=0.1,
         # alpha=0.1,
@@ -365,23 +366,23 @@ for ax in axs.reshape(-1):
 fig.tight_layout(pad=3)
 
 # %%
-sns.set_style("white")
+sns.set_style("whitegrid")
 
-fig, axs = plt.subplots(3, 4, figsize=(14, 10))
+fig, axs = plt.subplots(3, 4, figsize=(12, 9))
 
 impacts = [
     "Total Damages $1 billion",
     "Total Damages $1 billion",
     "Total Damages $1 billion",
     "Total Damages $1 billion",
-    "Total Affected",
-    "Total Affected",
-    "Total Affected",
-    "Total Affected",
     "Total Deaths",
     "Total Deaths",
     "Total Deaths",
     "Total Deaths",
+    "Total Affected",
+    "Total Affected",
+    "Total Affected",
+    "Total Affected",
 ]
 
 i = -1
@@ -409,7 +410,7 @@ for ax in axs.reshape(-1):
         errorbar=("pi", 95),
         markers="|",
         legend=False,
-        palette=sns.color_palette("BuPu", n_colors=1),
+        palette=sns.color_palette("Greys", n_colors=1),
         capsize=0.1,
         # color=".5",
         # marker="D",
@@ -425,7 +426,7 @@ for ax in axs.reshape(-1):
         errorbar=("pi", 0),
         linestyle="none",
         legend=False,
-        palette=sns.color_palette("BuPu", n_colors=1),
+        palette=sns.color_palette("Greys", n_colors=1),
     ).set(xlabel="")
 
     # sns.move_legend(
@@ -439,7 +440,7 @@ for ax in axs.reshape(-1):
 
     ax.set_ylabel(impacts[i], fontsize=15)
     ax.tick_params(labelsize=10)
-    ax.set_xticklabels(ax.get_xticklabels(), fontsize=15, rotation=45)
+    ax.set_xticklabels(ax.get_xticklabels(), fontsize=15)
     # ax.yaxis.grid(True)  # Hide the horizontal gridlines
 
     # if i==1:
