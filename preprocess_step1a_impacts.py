@@ -10,16 +10,13 @@
 # %% Imports
 import pandas as pd
 import geopandas as gpd
-from shapely.ops import unary_union
-from shapely import wkt
 import numpy as np
 
 # %% Define constants
 FIRST_YEAR = 2000
 LAST_YEAR = 2018
 EM_DAT_PATH = "data/emdat_public_2023_03_31_query_uid-n7b9hv-natural-sisasters.csv"
-GDIS_PATH = "data/pend-gdis-1960-2018-disasterlocations.gdb"
-GDIS_CSV_PATH = "data/pend-gdis-1960-2018-disasterlocations.csv"
+GDIS_PATH = "data/pend-gdis-1960-2018-disasterlocations-gdb/pend-gdis-1960-2018-disasterlocations.gdb"
 PROCESSED_EMDAT_PATH = "data/emdat_" + str(FIRST_YEAR) + "_" + str(LAST_YEAR) + ".csv"
 PROCESSED_GDIS_PATH = "data/gdis_" + str(FIRST_YEAR) + "_" + str(LAST_YEAR) + ".gpkg"
 PROCESSED_IMPACT_PATH = (

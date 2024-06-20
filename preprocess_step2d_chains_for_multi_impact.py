@@ -2,11 +2,7 @@
 import pandas as pd
 import itertools
 import json
-import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib.colors import ListedColormap
-from shapely import wkt
-import geopandas as gpd
+
 
 FIRST_YEAR = 2000
 LAST_YEAR = 2018
@@ -20,8 +16,8 @@ df_emdat = pd.read_csv(PROCESSED_EMDAT_PATH).set_index("Dis No")
 unique_events_sorted = df_emdat.sort_values(by="Start Date").index.values
 
 # %%
-min_overlap_thress = [0, 0.5, 1]
-max_time_lags = [0, 30, 91, 182, 365, 100000]
+min_overlap_thress = [0.5] # [0, 0.5, 1]
+max_time_lags = [91] #[0, 30, 91, 182, 365, 100000]
 
 
 # %%

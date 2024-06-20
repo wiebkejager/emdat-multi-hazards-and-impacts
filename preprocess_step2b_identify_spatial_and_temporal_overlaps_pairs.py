@@ -1,12 +1,8 @@
 # %% Imports
 import pandas as pd
-import itertools
-import json
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.colors import ListedColormap
-from shapely import wkt
-import geopandas as gpd
+
 
 FIRST_YEAR = 2000
 LAST_YEAR = 2018

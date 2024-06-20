@@ -1,12 +1,6 @@
 # %% Imports
 import pandas as pd
-import itertools
-import json
-import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.colors import ListedColormap
-from shapely import wkt
-import geopandas as gpd
 from itertools import chain
 import seaborn as sns
 
@@ -114,6 +108,7 @@ df_plot["Total People Affected"] = 100 - (
 )
 df_plot["Total Deaths"] = 100 - df_plot["Total Deaths"] / total_deaths * 100
 
+df_plot["Time lag"] = round(df_plot["Time lag"] / 30)
 
 # %%
 df_plot = df_plot.rename(columns={"No hazards": "Number of single hazards"})
@@ -151,7 +146,7 @@ sns.lineplot(
     markersize=12,
 )
 
-ax1.set_xlabel("Maximum time lag [days]", fontsize=20)
+ax1.set_xlabel("Maximum time lag [months]", fontsize=20)
 ax1.set_ylabel("Hazards [%]", fontsize=20)
 ax1.tick_params(labelsize=18)
 ax1.set_title("(a)", fontsize=20)
@@ -177,7 +172,7 @@ sns.lineplot(
     markersize=12,
 )
 
-ax2.set_xlabel("Maximum time lag [days]", fontsize=20)
+ax2.set_xlabel("Maximum time lag [months]", fontsize=20)
 ax2.set_ylabel("Total Damages [%]", fontsize=20)
 ax2.tick_params(labelsize=18)
 ax2.set_title("(b)", fontsize=20)
@@ -200,7 +195,7 @@ sns.lineplot(
     markersize=12,
 )
 
-ax3.set_xlabel("Maximum time lag [days]", fontsize=20)
+ax3.set_xlabel("Maximum time lag [months]", fontsize=20)
 ax3.set_ylabel("Total People Affected [%]", fontsize=20)
 ax3.tick_params(labelsize=18)
 ax3.set_title("(c)", fontsize=20)
@@ -224,7 +219,7 @@ sns.lineplot(
     markersize=12,
 )
 
-ax4.set_xlabel("Maximum time lag [days]", fontsize=20)
+ax4.set_xlabel("Maximum time lag [months]", fontsize=20)
 ax4.set_ylabel("Total Deaths [%]", fontsize=20)
 ax4.tick_params(labelsize=18)
 ax4.set_title("(d)", fontsize=20)
