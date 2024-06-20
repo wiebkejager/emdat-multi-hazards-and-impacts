@@ -280,7 +280,7 @@ sns.set_style("whitegrid")
 fig, axs = plt.subplots(
     3,
     4,
-    figsize=(12, 12),
+    figsize=(12, 20),
 )
 hazard_groups = [
     ["ew", "fl", "ew,fl"],
@@ -319,25 +319,13 @@ for ax in axs.reshape(-1):
 
 
     hazard_filter = df_bs.loc[:, "event_type"].isin(hazard_group)
-    sns.pointplot(
-        ax=ax,
-        x="wholesum",
-        y=impacts[i],
-        data=df_bs[hazard_filter],
-        linestyle="none",
-        errorbar=("pi", 95),
-        markers="|",
-        legend=False,
-        palette=sns.color_palette("Greys", n_colors=1),
-        capsize=0.1,
-    ).set(xlabel="")
+
 
     sns.pointplot(
         ax=ax,
         x="wholesum",
         y=impacts[i],
         data=df_bs[hazard_filter],
-        # dodge=0.4,
         errorbar=("pi", 0),
         linestyle="none",
         legend=False,
@@ -361,7 +349,23 @@ for ax in axs.reshape(-1):
         #     "markersize": "7",
         #     # "alpha": 0,
         # },
-        color="white",
+        # color="white",
+        boxprops={'fill': None}
+    ).set(xlabel="")
+
+    hazard_filter = df_bs.loc[:, "event_type"].isin(hazard_group)
+
+    sns.pointplot(
+        ax=ax,
+        x="wholesum",
+        y=impacts[i],
+        data=df_bs[hazard_filter],
+        linestyle="none",
+        errorbar=("pi", 95),
+        markers="|",
+        legend=False,
+        palette=sns.color_palette("Greys", n_colors=1),
+        capsize=0.1,
     ).set(xlabel="")
 
     ax.set_ylabel(impacts[i], fontsize=15)
