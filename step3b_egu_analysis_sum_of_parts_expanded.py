@@ -280,7 +280,7 @@ sns.set_style("whitegrid")
 fig, axs = plt.subplots(
     3,
     4,
-    figsize=(12, 20),
+    figsize=(20, 20),
 )
 hazard_groups = [
     ["ew", "fl", "ew,fl"],
@@ -316,9 +316,16 @@ i = -1
 for ax in axs.reshape(-1):
     i = i + 1
     hazard_group = hazard_groups[i]
-
-
     hazard_filter = df_bs.loc[:, "event_type"].isin(hazard_group)
+
+    impact = ""
+    if impacts[i] == "Total Damages $1 billion":
+        impact = "Damages [$1 billion]"
+    if impacts[i] == "Total Deaths":
+        impact = "Number of Deaths"
+    if impacts[i] == "Total Affected":
+        impact = "Number of People Affected"
+        
 
 
     sns.pointplot(
@@ -368,11 +375,98 @@ for ax in axs.reshape(-1):
         capsize=0.1,
     ).set(xlabel="")
 
-    ax.set_ylabel(impacts[i], fontsize=15)
-    ax.tick_params(labelsize=10, rotation = 45)
-    ax.set_xticklabels(ax.get_xticklabels(), fontsize=15, )
+    ax.set_ylabel(impact, fontsize=22)
+    ax.tick_params(labelsize=20, rotation = 45)
+    ax.set_xticklabels(ax.get_xticklabels(), fontsize=20, )
+
+    #if i == 4:
+    # ax.semilogy(base=10)
 
 fig.tight_layout(pad=3)
+
+
+#%%
+# sns.set_style("whitegrid")
+# fig, axs = plt.subplots(
+#     3,
+#     1,
+#     figsize=(30, 30),
+# )
+# hazard_groups = [
+#     ["ew", "fl", "ew,fl"],
+#     ["ew", "fl", "ls", "ew,fl", "fl,fl", "fl,ls"],
+#     ["ew", "fl", "ls", "eq", "ew,fl", "fl,fl", "fl,ls", "eq,ls"],
+
+# ]
+# impacts = [
+#     "Total Damages $1 billion",
+#     "Total Deaths",
+#     "Total Affected",
+# ]
+
+# i = -1
+
+# for ax in axs.reshape(-1):
+#     i = i + 1
+#     hazard_group = hazard_groups[i]
+
+
+#     hazard_filter = df_bs.loc[:, "event_type"].isin(hazard_group)
+
+
+#     sns.pointplot(
+#         ax=ax,
+#         y="wholesum",
+#         x=impacts[i],
+#         data=df_bs[hazard_filter],
+#         errorbar=("pi", 0),
+#         linestyle="none",
+#         legend=False,
+#         palette=sns.color_palette("Greys", n_colors=1),
+#     ).set(xlabel="")
+
+
+#     hazard_filter = df.loc[:, "eventtype_detailed"].isin(hazard_group)
+#     sns.boxplot(
+#         y="eventtype_detailed",
+#         x=impacts[i],
+#         data=df[hazard_filter],
+#         ax=ax,
+#         order=hazard_group,
+#         showfliers=False,
+#         # showmeans=True,
+#         # meanprops={
+#         #     "markerfacecolor": sns.color_palette("Greys", n_colors=1)[0],
+#         #     "markeredgecolor": sns.color_palette("Greys", n_colors=1)[0],
+#         #     "marker": "o",
+#         #     "markersize": "7",
+#         #     # "alpha": 0,
+#         # },
+#         # color="white",
+#         boxprops={'fill': None}
+#     ).set(xlabel="")
+
+#     hazard_filter = df_bs.loc[:, "event_type"].isin(hazard_group)
+
+#     sns.pointplot(
+#         ax=ax,
+#         y="wholesum",
+#         x=impacts[i],
+#         data=df_bs[hazard_filter],
+#         linestyle="none",
+#         errorbar=("pi", 95),
+#         markers="|",
+#         legend=False,
+#         palette=sns.color_palette("Greys", n_colors=1),
+#         capsize=0.1,
+#     ).set(xlabel="")
+
+#     ax.set_ylabel(impacts[i], fontsize=22)
+#     ax.tick_params(labelsize=17, rotation = 45)
+#     ax.set_xticklabels(ax.get_xticklabels(), fontsize=17, )
+#     ax.semilogx(base=10)
+
+# fig.tight_layout(pad=3)
 
 # %%
 # sns.set_style("whitegrid")
