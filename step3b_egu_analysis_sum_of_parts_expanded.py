@@ -281,7 +281,8 @@ fig, axs = plt.subplots(
     3,
     4,
     figsize=(20, 20),
-)
+    facecolor = "0.95")
+
 hazard_groups = [
     ["ew", "fl", "ew,fl"],
     ["fl", "fl", "fl,fl"],
@@ -310,6 +311,12 @@ impacts = [
     "Total Affected",
     "Total Affected",
 ]
+titles = [
+    "Extreme winds and floods", 
+    "Floods and floods", 
+    "Floods and landslides", 
+    "Earthquakes and landslides"
+]
 
 i = -1
 
@@ -325,9 +332,8 @@ for ax in axs.reshape(-1):
         impact = "Number of Deaths"
     if impacts[i] == "Total Affected":
         impact = "Number of People Affected"
-        
 
-
+   
     sns.pointplot(
         ax=ax,
         x="wholesum",
@@ -337,7 +343,7 @@ for ax in axs.reshape(-1):
         linestyle="none",
         legend=False,
         palette=sns.color_palette("Greys", n_colors=1),
-    ).set(xlabel="")
+    ).set(xlabel="", ylabel="")
 
 
     hazard_filter = df.loc[:, "eventtype_detailed"].isin(hazard_group)
@@ -358,7 +364,7 @@ for ax in axs.reshape(-1):
         # },
         # color="white",
         boxprops={'fill': None}
-    ).set(xlabel="")
+    ).set(xlabel="", ylabel = "")
 
     hazard_filter = df_bs.loc[:, "event_type"].isin(hazard_group)
 
@@ -368,21 +374,26 @@ for ax in axs.reshape(-1):
         y=impacts[i],
         data=df_bs[hazard_filter],
         linestyle="none",
-        errorbar=("pi", 95),
+        errorbar=("pi", 90),
         markers="|",
         legend=False,
         palette=sns.color_palette("Greys", n_colors=1),
         capsize=0.1,
-    ).set(xlabel="")
+    ).set(xlabel="", ylabel ="")
 
-    ax.set_ylabel(impact, fontsize=22)
     ax.tick_params(labelsize=20, rotation = 45)
     ax.set_xticklabels(ax.get_xticklabels(), fontsize=20, )
 
-    #if i == 4:
-    # ax.semilogy(base=10)
+    if i in [0,4,8]:
+        ax.set_ylabel(impact, fontsize=25, labelpad=25, weight="bold")
 
-fig.tight_layout(pad=3)
+
+    if i in [0,1,2,3]:
+        ax.set_title(titles[i], fontsize = 25, pad=25, weight="bold")
+
+    # if i in [0,2,4,6,8]:
+    #     ax.set_facecolor('xkcd:mint green')
+fig.tight_layout(pad=2)
 
 
 #%%
