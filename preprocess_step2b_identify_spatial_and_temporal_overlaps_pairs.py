@@ -26,12 +26,16 @@ df["StartDate2"] = pd.to_datetime(
 df["Timelag"] = df.apply(lambda x: abs((x.StartDate2 - x.StartDate1).days), axis=1)
 
 # %%
-plt.hist(
+plt.figure(figsize=(8,4))
+ax = plt.hist(
     df["Percent"] * 100,
     bins=100,
+    color="grey"
 )
-plt.xlabel("Intersection %")
-plt.ylabel("Number of event pairs")
+plt.xlabel("Intersection %", fontsize = 15)
+plt.ylabel("Number of event pairs", fontsize = 15)
+plt.tick_params(labelsize=12)
+plt.tight_layout()
 
 
 # %%
