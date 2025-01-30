@@ -1,7 +1,6 @@
 # %% Imports
 import pandas as pd
 import matplotlib.pyplot as plt
-from itertools import chain
 import seaborn as sns
 import json
 
@@ -31,43 +30,101 @@ max_time_lags = [0, 30, 91, 182, 365]
 
 # %%
 df_events = pd.DataFrame()
-
+no_events = pd.DataFrame()
 
 # %%
 
-for min_overlap_thres in min_overlap_thress:
-    for max_time_lag in max_time_lags:
+# for min_overlap_thres in min_overlap_thress:
+#     for max_time_lag in max_time_lags:
 
-        filename = "data/df_chain_" + str(min_overlap_thres) + "_" + str(max_time_lag) + ".csv"
-              
-        df = pd.read_csv(filename, sep=";")
+min_overlap_thres = 0.5
+max_time_lag = 91
+
+# Read file
+filename = "data/df_chain_" + str(min_overlap_thres) + "_" + str(max_time_lag) + ".csv"          
+df_chain = pd.read_csv(filename, sep=";")
+
+# Sort records column to make looping faster
+df_chain.sort_values(by = "Events")
+
+# Convert string of events to list of events 
+df_chain["Events"] = df_chain["Events"].apply(json.loads)
+
+#%%
+# Create multi-hazard events set
+df_mh_events = df_chain.copy(deep = True)
+
+# Drop duplicates
+for ix, irow in df_chain.iterrows():
+    is_subset = False
+    for jx, jrow in df_chain.iterrows():                      
+        # Check if chain is included in another chain 
+        if ix != jx:
+            is_subset = set(irow["Events"]).issubset(jrow["Events"]) 
+            # If chain is included in another chain drop from multi-hazard events df
+            if is_subset == True:
+                df_mh_events.drop(ix, inplace = True)
+                break
+
+#%%
+# Add impact metrics
+for ix, row in df_mh_events.iterrows():
+    deaths = 0
+    affected = 0
+    damage = 0
+    for record in row["Events"]:
+        deaths = (deaths + df_emdat.loc[record, "Total Deaths"]).sum()
+        affected = (affected + df_emdat.loc[record, "Total Affected"]).sum()
+        damage = (damage + df_emdat.loc[record, "Total Damages, Adjusted ('000 US$')"]).sum()  
+    df_mh_events.loc[ix,"Total deaths"] = deaths
+    df_mh_events.loc[ix,"Total affected"] = affected
+    df_mh_events.loc[ix,"Total damages"] = damage
+
+# Add information on time lag and overlap for later analysis
+df_mh_events.loc[:,"Time lag"] = max_time_lag
+df_mh_events.loc[:,"Spatial overlap"] = min_overlap_thres
+
+df_mh_events.drop(df_mh_events.columns[0], axis = 1, inplace= True)
+
+#%%
+# Save
+df_mh_events.to_csv(
+    "data/df_mh_events"
+    + str(min_overlap_thres)
+    + "_"
+    + str(max_time_lag)
+    + ".csv",
+    sep=";",
+    index=False,
+)
+
+#%%
 
 
-        for ix, row in df.iterrows():
-            records = json.loads(row["Events"])
-            deaths = 0
-            affected = 0
-            damage = 0
-            for record in records:
-                deaths = deaths + df_emdat.loc[record, "Total Deaths"]
-                affected = affected + df_emdat.loc[record, "Total Affected"]
-                #damage = damage + df_emdat.loc[record, "Total Damages, Adjusted ('000 US$')"]                            ]
+
+        # # Add damages to each event
+        # for ix, row in df.iterrows():
+        #     records = json.loads(row["Events"])
+        #     deaths = 0
+        #     affected = 0
+        #     damage = 0
+        #     for record in records:
+        #         deaths = (deaths + df_emdat.loc[record, "Total Deaths"]).sum()
+        #         affected = (affected + df_emdat.loc[record, "Total Affected"]).sum()
+        #         damage = (damage + df_emdat.loc[record, "Total Damages, Adjusted ('000 US$')"]).sum()                      
  
-            df.loc[ix,"Total deaths"] = deaths
-            df.loc[ix,"Total affected"] = affected
-            df.loc[ix,"Total damages"] = damage
-            df.loc[ix,"Time lag"] = max_time_lag
-            df.loc[ix,"Spatial overlap"] = min_overlap_thres
+        #     df.loc[ix,"Total deaths"] = deaths
+        #     df.loc[ix,"Total affected"] = affected
+        #     df.loc[ix,"Total damages"] = damage
+        #     df.loc[ix,"Time lag"] = max_time_lag
+        #     df.loc[ix,"Spatial overlap"] = min_overlap_thres
 
-            df.loc[ix,"Event type"] = "Single"
-            if df.loc[ix,"No hazards"] > 1:
-                df.loc[ix,"Event type"] = "Multi"    
-
-    df_events = pd.concat(df_events,df)
-
-
-
-
+        #     df.loc[ix,"Event type"] = "Single"
+        #     if df.loc[ix,"No hazards"] > 1:
+        #         df.loc[ix,"Event type"] = "Multi"    
+                
+        # no_events = pd.concat([no_events,pd.DataFrame([{"Time lag": max_time_lag,"Spatial overlap": min_overlap_thres,"Number events": len(df)}])])
+        # df_events = pd.concat([df_events,df])
 
 
 # %%
@@ -76,10 +133,10 @@ df_plot = (
         [
             "Time lag",
             "Spatial overlap",
-            "Event type"
+            "Event type",
             "No hazards",
             "Total damages",
-            "Total people affected",
+            "Total affected",
             "Total deaths",
         ]
     ]
@@ -90,11 +147,11 @@ df_plot = (
 
 
 # %%
-df_plot["Total Damages"] = 100 - df_plot["Total Damages"] / total_damages * 100
-df_plot["Total People Affected"] = 100 - (
-    df_plot["Total People Affected"] / total_affected * 100
+df_plot["Total damages"] = 100 - df_plot["Total damages"] / total_damages * 100
+df_plot["Total affected"] = 100 - (
+    df_plot["Total affected"] / total_affected * 100
 )
-df_plot["Total Deaths"] = 100 - df_plot["Total Deaths"] / total_deaths * 100
+df_plot["Total deaths"] = 100 - df_plot["Total deaths"] / total_deaths * 100
 
 df_plot["Time lag"] = round(df_plot["Time lag"] / 30)
 
@@ -108,6 +165,8 @@ df_plot["Spatial overlap"] = df_plot["Spatial overlap"] * 100
 df_plot["Spatial overlap"] = df_plot["Spatial overlap"].astype(int).astype(str) + "%"
 df_plot = df_plot.rename(columns={"Spatial overlap": "Minimum spatial overlap"})
 
+#%%
+mutli_filter = df_plot["Event type"] == "Single"
 
 # %% color palette
 cp = sns.color_palette("Greys", n_colors=3)
@@ -118,7 +177,7 @@ sns.set_style("whitegrid")
 fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(14, 12))
 
 sns.lineplot(
-    data=df_plot,
+    data=df_plot[mutli_filter],
     x="Time lag",
     y="Proportion of hazards",
     hue="Minimum spatial overlap",
@@ -138,9 +197,9 @@ ax1.set_ylim([40, 100])
 plt.setp(ax1.get_legend().get_title(), fontsize="20")  # for legend title
 
 sns.lineplot(
-    data=df_plot,
+    data=df_plot[mutli_filter],
     x="Time lag",
-    y="Total Damages",
+    y="Total damages",
     hue="Minimum spatial overlap",
     style="Minimum spatial overlap",
     markers=True,
@@ -161,9 +220,9 @@ ax2.set_ylim([40, 100])
 plt.tight_layout()
 
 sns.lineplot(
-    data=df_plot,
+    data=df_plot[mutli_filter],
     x="Time lag",
-    y="Total People Affected",
+    y="Total affected",
     hue="Minimum spatial overlap",
     style="Minimum spatial overlap",
     markers=True,
@@ -174,7 +233,7 @@ sns.lineplot(
 )
 
 ax3.set_xlabel("Maximum time lag [months]", fontsize=20)
-ax3.set_ylabel("Total People Affected [%]", fontsize=20)
+ax3.set_ylabel("Total affected [%]", fontsize=20)
 ax3.tick_params(labelsize=18)
 ax3.set_title("(c)", fontsize=20)
 ax3.set_ylim([40, 100])
@@ -185,9 +244,9 @@ ax3.set_ylim([40, 100])
 plt.tight_layout()
 
 sns.lineplot(
-    data=df_plot,
+    data=df_plot[mutli_filter],
     x="Time lag",
-    y="Total Deaths",
+    y="Total deaths",
     hue="Minimum spatial overlap",
     style="Minimum spatial overlap",
     markers=True,

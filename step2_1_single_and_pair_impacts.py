@@ -97,7 +97,8 @@ def create_new_row() -> pd.DataFrame:
 
 
 # %% Get impacts for first and second hazards
-for ix, row in df_chains.loc[df_chains["No hazards"] <= 2].iterrows():
+
+for ix, row in df_chains.loc[df_chains["No hazards"] <= 2].iterrows(): # Extract those chains that report 1 or 2 hazards (this solves the duplicate issue)
     dis_no1 = row["Events"][0]
     event1 = df_emdat.loc[dis_no1]
 

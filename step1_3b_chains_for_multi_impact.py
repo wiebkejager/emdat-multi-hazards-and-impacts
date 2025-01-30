@@ -87,6 +87,8 @@ for min_overlap_thres in min_overlap_thress:
                     influencing_events = influencing_events_updated
 
             all_events = influencing_events + [unique_event]
+
+            # Sort events according to start date
             all_events_sorted = [
                 e[0]
                 for e in sorted(
