@@ -16,8 +16,8 @@ df_emdat = pd.read_csv(PROCESSED_EMDAT_PATH).set_index("Dis No")
 unique_events_sorted = df_emdat.sort_values(by="Start Date").index.values
 
 # %%
-min_overlap_thress = [0.5] # [0, 0.5, 1]
-max_time_lags = [91] #[0, 30, 91, 182, 365, 100000]
+min_overlap_thress = [0.25, 0.5, 0.75, 1]
+max_time_lags = [0, 30, 91, 182, 365]
 
 
 # %%
@@ -39,8 +39,6 @@ def get_influencing_events(event, event_pairs, df_emdat) -> list:
 
 
 # %%
-# min_overlap_thres = 1
-# max_time_lag = 0
 for min_overlap_thres in min_overlap_thress:
     for max_time_lag in max_time_lags:
 
