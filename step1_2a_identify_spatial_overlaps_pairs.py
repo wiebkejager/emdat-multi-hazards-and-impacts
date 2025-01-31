@@ -3,7 +3,6 @@ import geopandas as gpd
 import pandas as pd
 import itertools
 import threading
-import json
 from shapely import wkt
 import time
 import numpy as np
