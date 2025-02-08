@@ -46,9 +46,9 @@ for min_overlap_thres in min_overlap_thress:
                         {
                             "Time lag": max_time_lag,
                             "Spatial overlap": min_overlap_thres,
-                            "Number events": len(df_mh_events),
-                            "Share mh events": len(df_mh_events)
-                            / sum(df_mh_events["No hazards"] > 1),
+                            "No events": len(df_mh_events),
+                            "Share mh events": sum(df_mh_events["No hazards"] > 1)
+                            / len(df_mh_events),
                         }
                     ]
                 ),
@@ -62,7 +62,7 @@ for min_overlap_thres in min_overlap_thress:
 
 # Get all single hazard events
 single_filter = df_all["No hazards"] == 1
-df_all_singles = df_all.loc[single_filter, :]
+df_all_singles = df_all.loc[single_filter, :].reset_index()
 
 # Create aggregation
 df_grouped = (
@@ -82,7 +82,7 @@ df_grouped = (
 )
 
 # Get percentages of multi-event impacts as 100% - share of single events
-df_all_multi_shares = df_all_singles.copy(deep=True)
+df_all_multi_shares = df_grouped.copy(deep=True)
 df_all_multi_shares["Total damages"] = (
     100 - df_all_multi_shares["Total damages"] / total_damages * 100
 )
@@ -93,8 +93,23 @@ df_all_multi_shares["Total deaths"] = (
     100 - df_all_multi_shares["Total deaths"] / total_deaths * 100
 )
 
+# Add number of identified events and share of multi-hazard events
+for ix, row in df_all_multi_shares.iterrows():
+    no_events_filter = (no_events["Time lag"] == row["Time lag"]) & (
+        no_events["Spatial overlap"] == row["Spatial overlap"]
+    )
+    df_all_multi_shares.loc[ix, "No events"] = no_events.loc[
+        no_events_filter, "No events"
+    ][0]
+    df_all_multi_shares.loc[ix, "Share mh events"] = no_events.loc[
+        no_events_filter, "Share mh events"
+    ][0]
+
 # Round time lag to months
 df_all_multi_shares["Time lag"] = round(df_all_multi_shares["Time lag"] / 30)
+
+# Share of mh events to %
+df_all_multi_shares["Share mh events"] = df_all_multi_shares["Share mh events"] * 100
 
 # Spatial overlap to %
 df_all_multi_shares["Spatial overlap"] = df_all_multi_shares["Spatial overlap"] * 100
@@ -105,23 +120,11 @@ df_all_multi_shares = df_all_multi_shares.rename(
     columns={"Spatial overlap": "Minimum spatial overlap"}
 )
 
-# Add number of identified events and share of multi-hazard events
-for ix, row in df_all_multi_shares.iterrows():
-    no_events_filter = (no_events["Time lag"] == row["Time lag"]) & (
-        no_events["Spatial overlap"] == row["Spatial overlap"]
-    )
-    df_all_multi_shares.loc[ix, "No events"] = no_events.loc[
-        no_events_filter, "No events"
-    ]
-    df_all_multi_shares.loc[ix, "Share mh events"] = no_events.loc[
-        no_events_filter, "Share mh events"
-    ]
-
 # %% Create plots
 cp = sns.color_palette("Greys", n_colors=3)
 cp2 = [cp[0], cp[1], cp[2], cp[1], cp[0]]
 sns.set_style("whitegrid")
-fig, ((ax1, ax2), (ax3, ax4, ax5)) = plt.subplots(2, 3, figsize=(14, 12))
+fig, ((ax1, ax2, ax3), (ax4, ax5, ax6)) = plt.subplots(2, 3, figsize=(18, 12))
 
 # first panel
 sns.lineplot(
@@ -140,7 +143,7 @@ ax1.set_xlabel("Maximum time lag [months]", fontsize=20)
 ax1.set_ylabel("Number of events", fontsize=20)
 ax1.tick_params(labelsize=18)
 ax1.set_title("(a)", fontsize=20)
-ax1.set_ylim([40, 100])
+ax1.set_ylim([2500, 6000])
 plt.setp(ax1.get_legend().get_title(), fontsize="20")  # for legend title
 
 # second panel
@@ -151,17 +154,19 @@ sns.lineplot(
     hue="Minimum spatial overlap",
     style="Minimum spatial overlap",
     markers=True,
-    legend=True,
+    legend=False,
     palette=cp2,
     ax=ax2,
     markersize=12,
 )
 ax2.set_xlabel("Maximum time lag [months]", fontsize=20)
-ax2.set_ylabel("Share of multi-hazard events", fontsize=20)
+ax2.set_ylabel("Share of multi-hazard events [%]", fontsize=20)
 ax2.tick_params(labelsize=18)
-ax2.set_title("(a)", fontsize=20)
-ax2.set_ylim([40, 100])
-plt.setp(ax2.get_legend().get_title(), fontsize="20")  # for legend title
+ax2.set_title("(b)", fontsize=20)
+ax2.set_ylim([25, 45])
+
+
+ax3.axis("off")
 
 # third panel
 sns.lineplot(
@@ -173,14 +178,14 @@ sns.lineplot(
     markers=True,
     legend=False,
     palette=cp2,
-    ax=ax3,
+    ax=ax4,
     markersize=12,
 )
-ax3.set_xlabel("Maximum time lag [months]", fontsize=20)
-ax3.set_ylabel("Total Damages [%]", fontsize=20)
-ax3.tick_params(labelsize=18)
-ax3.set_title("(b)", fontsize=20)
-ax3.set_ylim([40, 100])
+ax4.set_xlabel("Maximum time lag [months]", fontsize=20)
+ax4.set_ylabel("Total Damages [%]", fontsize=20)
+ax4.tick_params(labelsize=18)
+ax4.set_title("(b)", fontsize=20)
+# ax4.set_ylim([40, 100])
 
 # fourth panel
 sns.lineplot(
@@ -192,14 +197,14 @@ sns.lineplot(
     markers=True,
     legend=False,
     palette=cp2,
-    ax=ax4,
+    ax=ax5,
     markersize=12,
 )
-ax4.set_xlabel("Maximum time lag [months]", fontsize=20)
-ax4.set_ylabel("Total affected [%]", fontsize=20)
-ax4.tick_params(labelsize=18)
-ax4.set_title("(c)", fontsize=20)
-ax4.set_ylim([40, 100])
+ax5.set_xlabel("Maximum time lag [months]", fontsize=20)
+ax5.set_ylabel("Total affected [%]", fontsize=20)
+ax5.tick_params(labelsize=18)
+ax5.set_title("(c)", fontsize=20)
+# ax5.set_ylim([40, 100])
 
 # fifth panel
 sns.lineplot(
@@ -211,15 +216,17 @@ sns.lineplot(
     markers=True,
     legend=False,
     palette=cp2,
-    ax=ax5,
+    ax=ax6,
     markersize=12,
 )
-ax5.set_xlabel("Maximum time lag [months]", fontsize=20)
-ax5.set_ylabel("Total Deaths [%]", fontsize=20)
-ax5.tick_params(labelsize=18)
-ax5.set_title("(d)", fontsize=20)
-ax5.set_ylim([40, 100])
+ax6.set_xlabel("Maximum time lag [months]", fontsize=20)
+ax6.set_ylabel("Total Deaths [%]", fontsize=20)
+ax6.tick_params(labelsize=18)
+ax6.set_title("(d)", fontsize=20)
+# ax6.set_ylim([40, 100])
 
 # layout & legend
 plt.tight_layout(pad=3)
-sns.move_legend(ax2, "upper left", bbox_to_anchor=(2.3, 1.025), prop={"size": 18})
+sns.move_legend(ax1, "upper left", bbox_to_anchor=(2.6, 1.025), prop={"size": 18})
+
+# %%
