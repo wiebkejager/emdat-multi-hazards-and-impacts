@@ -66,7 +66,7 @@ df_all_singles = df_all.loc[single_filter, :].reset_index()
 
 # Create aggregation
 df_grouped = (
-    df_all[
+    df_all_singles[
         [
             "Time lag",
             "Spatial overlap",
@@ -124,13 +124,13 @@ df_all_multi_shares = df_all_multi_shares.rename(
 cp = sns.color_palette("Greys", n_colors=3)
 cp2 = [cp[0], cp[1], cp[2], cp[1], cp[0]]
 sns.set_style("whitegrid")
-fig, ((ax1, ax2, ax3), (ax4, ax5, ax6)) = plt.subplots(2, 3, figsize=(18, 12))
+fig, ((ax1, ax4), (ax5, ax6)) = plt.subplots(2, 2, figsize=(14, 13))
 
 # first panel
 sns.lineplot(
     data=df_all_multi_shares,
     x="Time lag",
-    y="No events",
+    y="Share mh events",
     hue="Minimum spatial overlap",
     style="Minimum spatial overlap",
     markers=True,
@@ -140,33 +140,31 @@ sns.lineplot(
     markersize=12,
 )
 ax1.set_xlabel("Maximum time lag [months]", fontsize=20)
-ax1.set_ylabel("Number of events", fontsize=20)
+ax1.set_ylabel("Share of multi-hazard events [%]", fontsize=20)
 ax1.tick_params(labelsize=18)
 ax1.set_title("(a)", fontsize=20)
-ax1.set_ylim([2500, 6000])
+ax1.set_ylim([23, 47])
 plt.setp(ax1.get_legend().get_title(), fontsize="20")  # for legend title
 
-# second panel
-sns.lineplot(
-    data=df_all_multi_shares,
-    x="Time lag",
-    y="Share mh events",
-    hue="Minimum spatial overlap",
-    style="Minimum spatial overlap",
-    markers=True,
-    legend=False,
-    palette=cp2,
-    ax=ax2,
-    markersize=12,
-)
-ax2.set_xlabel("Maximum time lag [months]", fontsize=20)
-ax2.set_ylabel("Share of multi-hazard events [%]", fontsize=20)
-ax2.tick_params(labelsize=18)
-ax2.set_title("(b)", fontsize=20)
-ax2.set_ylim([25, 45])
+# # second panel
+# sns.lineplot(
+#     data=df_all_multi_shares,
+#     x="Time lag",
+#     y="Share mh events",
+#     hue="Minimum spatial overlap",
+#     style="Minimum spatial overlap",
+#     markers=True,
+#     legend=False,
+#     palette=cp2,
+#     ax=ax2,
+#     markersize=12,
+# )
+# ax2.set_xlabel("Maximum time lag [months]", fontsize=20)
+# ax2.set_ylabel("Share of multi-hazard events [%]", fontsize=20)
+# ax2.tick_params(labelsize=18)
+# ax2.set_title("(b)", fontsize=20)
+# ax2.set_ylim([25, 45])
 
-
-ax3.axis("off")
 
 # third panel
 sns.lineplot(
@@ -185,7 +183,7 @@ ax4.set_xlabel("Maximum time lag [months]", fontsize=20)
 ax4.set_ylabel("Total Damages [%]", fontsize=20)
 ax4.tick_params(labelsize=18)
 ax4.set_title("(b)", fontsize=20)
-# ax4.set_ylim([40, 100])
+ax4.set_ylim([40, 100])
 
 # fourth panel
 sns.lineplot(
@@ -204,7 +202,7 @@ ax5.set_xlabel("Maximum time lag [months]", fontsize=20)
 ax5.set_ylabel("Total affected [%]", fontsize=20)
 ax5.tick_params(labelsize=18)
 ax5.set_title("(c)", fontsize=20)
-# ax5.set_ylim([40, 100])
+ax5.set_ylim([40, 100])
 
 # fifth panel
 sns.lineplot(
@@ -223,10 +221,12 @@ ax6.set_xlabel("Maximum time lag [months]", fontsize=20)
 ax6.set_ylabel("Total Deaths [%]", fontsize=20)
 ax6.tick_params(labelsize=18)
 ax6.set_title("(d)", fontsize=20)
-# ax6.set_ylim([40, 100])
+ax6.set_ylim([40, 100])
 
 # layout & legend
 plt.tight_layout(pad=3)
-sns.move_legend(ax1, "upper left", bbox_to_anchor=(2.6, 1.025), prop={"size": 18})
+sns.move_legend(
+    ax1, "lower center", ncol=5, bbox_to_anchor=(1.075, -1.65), prop={"size": 18}
+)
 
 # %%
