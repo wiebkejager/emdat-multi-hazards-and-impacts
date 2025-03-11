@@ -98,7 +98,9 @@ def create_new_row() -> pd.DataFrame:
 
 # %% Get impacts for first and second hazards
 
-for ix, row in df_chains.loc[df_chains["No hazards"] <= 2].iterrows(): # Extract those chains that report 1 or 2 hazards (this solves the duplicate issue)
+for ix, row in df_chains.loc[
+    df_chains["No hazards"] <= 2
+].iterrows():  # Extract those chains that report 1 or 2 hazards (this solves the duplicate issue)
     dis_no1 = row["Events"][0]
     event1 = df_emdat.loc[dis_no1]
 
@@ -191,4 +193,20 @@ df.to_csv(
     index=False,
 )
 
-# %%
+# %% How many EM-DAT records are not included in the analysis?
+
+# read data with single and pair events
+df_all = pd.read_csv(
+    "data/df_single_and_pair_impacts_"
+    + str(min_overlap_thres)
+    + "_"
+    + str(max_time_lag)
+    + ".csv",
+    sep=";",
+)
+
+# get unique list of EM-DAT records invluded
+no_unique_dis_nos = len(set(list(df_all["Dis No 1"]) + list(df_all["Dis No 2"])))
+
+# determine number of EM-DAT records not included
+len(df_emdat) - no_unique_dis_nos
