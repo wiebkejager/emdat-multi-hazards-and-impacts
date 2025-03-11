@@ -10,10 +10,10 @@ import matplotlib.pyplot as plt
 from my_functions import get_bs_sample_df, get_impact_mean
 
 # %% Constants
-# %% Constants
 min_overlap_thres = 0.5
 max_time_lag = 91
-# %%
+
+# %% Read file with single hazards and hazard pairs
 df_all = pd.read_csv(
     "data/df_single_and_pair_impacts_"
     + str(min_overlap_thres)
@@ -23,7 +23,7 @@ df_all = pd.read_csv(
     sep=";",
 )
 
-# %%
+# %% Add impacts to single hazards and hazard pairs
 df1 = df_all.loc[
     :, ["Hazard 1", "Total Deaths 1", "Total Affected 1", "Total Damages 1", "Timelag"]
 ].dropna(how="all", subset=["Total Deaths 1", "Total Affected 1", "Total Damages 1"])
@@ -66,91 +66,10 @@ df.loc[:, "eventtype_detailed"] = df[["Hazard 1", "Hazard 2"]].apply(
     lambda x: ",".join(sorted(list(x.dropna()))), axis=1
 )
 
-
 df["Total Damages $1 billion"] = df["Total Damages $1 billion"] / (10**6)
 
-# %%
 
-
-# %%
-# df_means = (
-#     df[["Total Damages", "Total Affected", "Total Deaths", "eventtype_detailed"]]
-#     .groupby(["eventtype_detailed"])
-#     .mean()
-# )
-
-# df_means.loc[
-#     ["ew", "fl", "ls", "eq", "fl,ls", "ew,fl", "fl,fl", "eq,ls"]
-# ].round().to_csv("data/sum_and_whole_damages.csv", sep=";")
-
-
-# %%
-# event_counts = df.loc[:, ["eventtype_detailed"]].value_counts()
-# event_counts.reset_index().plot.bar(rot=45, stacked=True)
-# hazards = sorted(event_counts[event_counts >= 25].index)
-
-
-# # %% Compare mean damages: I.e. if and only if Z = X + Y than E(Z) = E(X) + E(Y)
-# iterables = [
-#     ["Total Damages", "Total Affected", "Total Deaths"],
-#     ["whole", "sum", "whole/sum"],
-# ]
-# index = pd.MultiIndex.from_product(iterables, names=["first", "second"])
-# df_res = pd.DataFrame(index=index, columns=hazard_pairs)
-
-# for hazard_pair in hazard_pairs:
-#     ## Damages
-#     # pairs
-#     df_res.loc[index[0], hazard_pair] = df.loc[
-#         df.loc[:, "eventtype_detailed"] == hazard_pair, index[0][0]
-#     ].mean()
-#     # sum
-#     [haz1, haz2] = hazard_pair.split(",")
-#     df_res.loc[index[1], hazard_pair] = (
-#         df.loc[df.loc[:, "eventtype_detailed"] == haz1, index[0][0]].mean()
-#         + df.loc[df.loc[:, "eventtype_detailed"] == haz2, index[0][0]].mean()
-#     )
-#     # sum/pairs
-#     df_res.loc[index[2], hazard_pair] = (
-#         df_res.loc[index[0], hazard_pair] / df_res.loc[index[1], hazard_pair]
-#     )
-#     ## Affected
-#     # pairs
-#     df_res.loc[index[3], hazard_pair] = df.loc[
-#         df.loc[:, "eventtype_detailed"] == hazard_pair, index[3][0]
-#     ].mean()
-#     # sum
-#     [haz1, haz2] = hazard_pair.split(",")
-#     df_res.loc[index[4], hazard_pair] = (
-#         df.loc[df.loc[:, "eventtype_detailed"] == haz1, index[3][0]].mean()
-#         + df.loc[df.loc[:, "eventtype_detailed"] == haz2, index[3][0]].mean()
-#     )
-#     # sum/pairs
-#     df_res.loc[index[5], hazard_pair] = (
-#         df_res.loc[index[3], hazard_pair] / df_res.loc[index[4], hazard_pair]
-#     )
-
-#     ## Deaths
-#     # pairs
-#     df_res.loc[index[6], hazard_pair] = df.loc[
-#         df.loc[:, "eventtype_detailed"] == hazard_pair, index[6][0]
-#     ].mean()
-#     # sum
-#     [haz1, haz2] = hazard_pair.split(",")
-#     df_res.loc[index[7], hazard_pair] = (
-#         df.loc[df.loc[:, "eventtype_detailed"] == haz1, index[6][0]].mean()
-#         + df.loc[df.loc[:, "eventtype_detailed"] == haz2, index[6][0]].mean()
-#     )
-#     # sum/pairs
-#     df_res.loc[index[8], hazard_pair] = (
-#         df_res.loc[index[6], hazard_pair] / df_res.loc[index[7], hazard_pair]
-#     )
-
-# df_res = df_res.astype("float64").round(1)
-# df_res.to_csv("data/sum_and_whole_damages.csv", sep=";")
-
-
-# %% Bootstrap distribution mean damages: I.e. if and only if Z = X + Y than E(Z) = E(X) + E(Y)
+# %% Function for bootstrap distribution mean damages: I.e. if and only if Z = X + Y than E(Z) = E(X) + E(Y)
 def bootstrap(df) -> pd.DataFrame:
     # hazard_pairs = ["ew,fl"]
     hazard_pairs = ["fl,ls", "ew,fl", "eq,ls", "fl,fl"]
@@ -168,7 +87,7 @@ def bootstrap(df) -> pd.DataFrame:
     )
 
     n = 1
-    N = 1000
+    N = 10000
 
     for hazard_pair in hazard_pairs:
         [haz1, haz2] = hazard_pair.split(",")
@@ -264,18 +183,16 @@ def bootstrap(df) -> pd.DataFrame:
             df_bs = pd.concat([df_bs, new_row1], ignore_index=True)
             df_bs = pd.concat([df_bs, new_row2], ignore_index=True)
 
-            # df_bs = pd.concat([df_bs, new_row5], ignore_index=True)
-
         n = n + 1
 
     return df_bs
 
 
-# %%
+# %% Run function for bootstrap distribution mean damages
 df_bs = bootstrap(df)
 
 
-# %%
+# %% Plot results
 sns.set_style("whitegrid")
 fig, axs = plt.subplots(3, 4, figsize=(20, 20), facecolor="0.95")
 
@@ -307,6 +224,22 @@ impacts = [
     "Total Affected",
     "Total Affected",
 ]
+
+logscale = [
+    False,
+    False,
+    False,
+    False,
+    True,
+    False,
+    False,
+    False,
+    False,
+    False,
+    False,
+    False,
+]
+
 titles = [
     "Extreme winds and floods",
     "Floods and floods",
@@ -338,6 +271,7 @@ for ax in axs.reshape(-1):
         linestyle="none",
         legend=False,
         palette=sns.color_palette("Greys", n_colors=1),
+        log_scale=logscale[i],
     ).set(xlabel="", ylabel="")
 
     hazard_filter = df.loc[:, "eventtype_detailed"].isin(hazard_group)
@@ -348,15 +282,6 @@ for ax in axs.reshape(-1):
         ax=ax,
         order=hazard_group,
         showfliers=False,
-        # showmeans=True,
-        # meanprops={
-        #     "markerfacecolor": sns.color_palette("Greys", n_colors=1)[0],
-        #     "markeredgecolor": sns.color_palette("Greys", n_colors=1)[0],
-        #     "marker": "o",
-        #     "markersize": "7",
-        #     # "alpha": 0,
-        # },
-        # color="white",
         boxprops={"fill": None},
     ).set(xlabel="", ylabel="")
 
@@ -387,168 +312,4 @@ for ax in axs.reshape(-1):
     if i in [0, 1, 2, 3]:
         ax.set_title(titles[i], fontsize=25, pad=25, weight="bold")
 
-    # if i in [0,2,4,6,8]:
-    #     ax.set_facecolor('xkcd:mint green')
 fig.tight_layout(pad=2)
-
-
-# %%
-# sns.set_style("whitegrid")
-# fig, axs = plt.subplots(
-#     3,
-#     1,
-#     figsize=(30, 30),
-# )
-# hazard_groups = [
-#     ["ew", "fl", "ew,fl"],
-#     ["ew", "fl", "ls", "ew,fl", "fl,fl", "fl,ls"],
-#     ["ew", "fl", "ls", "eq", "ew,fl", "fl,fl", "fl,ls", "eq,ls"],
-
-# ]
-# impacts = [
-#     "Total Damages $1 billion",
-#     "Total Deaths",
-#     "Total Affected",
-# ]
-
-# i = -1
-
-# for ax in axs.reshape(-1):
-#     i = i + 1
-#     hazard_group = hazard_groups[i]
-
-
-#     hazard_filter = df_bs.loc[:, "event_type"].isin(hazard_group)
-
-
-#     sns.pointplot(
-#         ax=ax,
-#         y="wholesum",
-#         x=impacts[i],
-#         data=df_bs[hazard_filter],
-#         errorbar=("pi", 0),
-#         linestyle="none",
-#         legend=False,
-#         palette=sns.color_palette("Greys", n_colors=1),
-#     ).set(xlabel="")
-
-
-#     hazard_filter = df.loc[:, "eventtype_detailed"].isin(hazard_group)
-#     sns.boxplot(
-#         y="eventtype_detailed",
-#         x=impacts[i],
-#         data=df[hazard_filter],
-#         ax=ax,
-#         order=hazard_group,
-#         showfliers=False,
-#         # showmeans=True,
-#         # meanprops={
-#         #     "markerfacecolor": sns.color_palette("Greys", n_colors=1)[0],
-#         #     "markeredgecolor": sns.color_palette("Greys", n_colors=1)[0],
-#         #     "marker": "o",
-#         #     "markersize": "7",
-#         #     # "alpha": 0,
-#         # },
-#         # color="white",
-#         boxprops={'fill': None}
-#     ).set(xlabel="")
-
-#     hazard_filter = df_bs.loc[:, "event_type"].isin(hazard_group)
-
-#     sns.pointplot(
-#         ax=ax,
-#         y="wholesum",
-#         x=impacts[i],
-#         data=df_bs[hazard_filter],
-#         linestyle="none",
-#         errorbar=("pi", 95),
-#         markers="|",
-#         legend=False,
-#         palette=sns.color_palette("Greys", n_colors=1),
-#         capsize=0.1,
-#     ).set(xlabel="")
-
-#     ax.set_ylabel(impacts[i], fontsize=22)
-#     ax.tick_params(labelsize=17, rotation = 45)
-#     ax.set_xticklabels(ax.get_xticklabels(), fontsize=17, )
-#     ax.semilogx(base=10)
-
-# fig.tight_layout(pad=3)
-
-# %%
-# sns.set_style("whitegrid")
-
-# fig, axs = plt.subplots(3, 4, figsize=(12, 9))
-
-# impacts = [
-#     "Total Damages $1 billion",
-#     "Total Damages $1 billion",
-#     "Total Damages $1 billion",
-#     "Total Damages $1 billion",
-#     "Total Deaths",
-#     "Total Deaths",
-#     "Total Deaths",
-#     "Total Deaths",
-#     "Total Affected",
-#     "Total Affected",
-#     "Total Affected",
-#     "Total Affected",
-# ]
-
-# i = -1
-# for ax in axs.reshape(-1):
-#     i = i + 1
-#     hazard_group = hazard_groups[i]
-#     hazard_filter = df_bs.loc[:, "event_type"].isin(hazard_group)
-
-#     sns.pointplot(
-#         ax=ax,
-#         x="wholesum",
-#         y=impacts[i],
-#         data=df_bs[hazard_filter],
-#         dodge=0.4,
-#         linestyle="none",
-#         errorbar=("pi", 95),
-#         markers="|",
-#         legend=False,
-#         palette=sns.color_palette("Greys", n_colors=1),
-#         capsize=0.1,
-#       ).set(xlabel="")
-
-#     sns.pointplot(
-#         ax=ax,
-#         x="wholesum",
-#         y=impacts[i],
-#         # hue="wholesum",
-#         data=df_bs[hazard_filter],
-#         dodge=0.4,
-#         errorbar=("pi", 0),
-#         linestyle="none",
-#         legend=False,
-#         palette=sns.color_palette("Greys", n_colors=1),
-#     ).set(xlabel="")
-
-#     sns.boxplot(
-#         ax=ax,
-#         x="event_type",
-#         y=impacts[i],
-#         hue="wholesum",
-#         data=df_bs[hazard_filter],
-#         showfliers=False,
-#     )
-
-#     ax.set_ylabel(impacts[i], fontsize=15)
-#     ax.tick_params(labelsize=10)
-#     ax.set_xticklabels(ax.get_xticklabels(), fontsize=15)
-#     # ax.yaxis.grid(True)  # Hide the horizontal gridlines
-
-#     # if i==1:
-#     #     ax.semilogy(base=10)
-#     # ax.set_ylim(0, 3.25)
-
-
-# fig.tight_layout(pad=3)
-
-# # %%
-
-# %%
