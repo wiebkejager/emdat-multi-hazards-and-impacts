@@ -66,7 +66,7 @@ for min_overlap_thres in min_overlap_thress:
 
         # Save to file
         df_events_and_impacts.to_csv(
-            "data/df_events_and_impacts"
+            "data/df_events_and_impacts_"
             + str(min_overlap_thres)
             + "_"
             + str(max_time_lag)
