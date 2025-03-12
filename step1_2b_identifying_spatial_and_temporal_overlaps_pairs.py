@@ -18,10 +18,10 @@ df = pd.read_csv("data/record_pairs.csv", sep=";")
 # %%
 df["Percent"] = df.apply(lambda x: np.max([x.Percent1, x.Percent2]), axis=1)
 df["StartDate1"] = pd.to_datetime(
-    df.apply(lambda x: df_emdat.loc[x.Event1, "Start Date"], axis=1)
+    df.apply(lambda x: df_emdat.loc[x.Record1, "Start Date"], axis=1)
 )
 df["StartDate2"] = pd.to_datetime(
-    df.apply(lambda x: df_emdat.loc[x.Event2, "Start Date"], axis=1)
+    df.apply(lambda x: df_emdat.loc[x.Record2, "Start Date"], axis=1)
 )
 df["Timelag"] = df.apply(lambda x: abs((x.StartDate2 - x.StartDate1).days), axis=1)
 
