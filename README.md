@@ -1,1 +1,1 @@
-# multi-hazard-stats
+# emdat-multi-hazards-and-impacts
