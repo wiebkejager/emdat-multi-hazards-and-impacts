@@ -134,4 +134,5 @@ for min_overlap_thres in min_overlap_thress:
             + str(max_time_lag)
             + ".csv",
             sep=";",
+            index=False,
         )

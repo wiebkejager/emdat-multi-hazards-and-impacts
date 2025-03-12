@@ -24,8 +24,6 @@ for min_overlap_thres in min_overlap_thress:
         )
         df_events = pd.read_csv(filename, sep=";")
 
-        # Drop useless column
-        df_events.drop(df_events.columns[0], axis=1, inplace=True)
         # Sort records column to make looping faster
         df_events.sort_values(by="Records")
         # Convert string of records to list of records
